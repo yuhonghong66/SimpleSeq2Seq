@@ -71,11 +71,11 @@ class Dictionary:
         self.max_pair_num = 65100
 
         if file_path is not None:
-            self.create_dict(file_path)
+            self._create_dict(file_path)
         else:
             raise IsADirectoryError
 
-    def create_dict(self, file_path):
+    def _create_dict(self, file_path):
         corpus_path = file_path
         input_vocab_list = []
         output_vocab_list = []

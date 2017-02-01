@@ -1,8 +1,12 @@
 # -*- coding:utf-8 -*-
 """
-Sequence to Sequence model
-you can also use batch, gpu
-args: --gpu (flg of GPU)
+Sample script of Sequence to Sequence model.
+You can also use Batch and GPU.
+This model is based on below paper.
+
+Sutskever, I., Vinyals, O., and Le, Q. .
+Sequence to sequence learning with neural networks.
+In Advances in Neural Information Processing Systems (NIPS 2014).
 """
 
 import numpy as np

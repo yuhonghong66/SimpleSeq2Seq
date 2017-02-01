@@ -12,15 +12,26 @@ hoge
 
 ## Features
 
-- seq2seq
-  - SequenceToSequenceを用いたChatBotの生成
+- seq2seq.py
+  - Sequence-To-Sequence Model implemented by chainer
+
+- util.py
+  - Module of dictionary and corpus
+
+- train.py
+  - Train seq2seq model 
+
+- interpreter.py
+  - Run the model trained by train.py 
+  - You can talk to ChatBot
+
 
 ## Requirement
 
 - pyenv 
 - anaconda3-2.4.0
 - chainer (1.5 ~ latest?)
-- gensim (Word2Vec) 
+- gensim 
 
 ## Usage
 

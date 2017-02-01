@@ -1,8 +1,9 @@
 # -*- coding:utf-8 -*-
 """
-Sequence to Sequence model
-you can also use batch, gpu
-args: --gpu (flg of GPU)
+Sample script of Sequence to Sequence model for ChatBot.
+This is a train script for seq2seq.py
+You can also use Batch and GPU.
+args: --gpu (flg of GPU, if you want to use GPU, please write "--gpu 1")
 """
 
 import argparse
@@ -16,12 +17,22 @@ from seq2seq import Seq2Seq
 # parse command line args
 parser = argparse.ArgumentParser()
 parser.add_argument('--gpu', '-g', default='-1', type=int, help='GPU ID (negative value indicates CPU)')
+parser.add_argument('--epoch', '-e', default=1000, type=int, help='number of epochs to learn')
+parser.add_argument('--feature_num', '-f', default=128, type=int, help='dimension of feature layer')
+parser.add_argument('--hidden_num', '-h', default=64, type=int, help='dimension of hidden layer')
+parser.add_argument('--batchsize', '-b', default=100, type=int, help='learning minibatch size')
 args = parser.parse_args()
+
 gpu_device = 1
 if args.gpu >= 0:
     cuda.check_cuda_available()
     cuda.get_device(gpu_device).use()
 xp = cuda.cupy if args.gpu >= 0 else np
+
+n_epoch = args.epoch
+feature_num = args.feature_num
+hidden_num = args.hidden_num
+batchsize = args.batchsize
 
 
 def main():
@@ -52,11 +63,7 @@ def main():
     #### create model ####
     ######################
 
-    n_epoch = 1000
-    batchsize = 100
-    accum_loss = 0
-
-    model = Seq2Seq(len(id2word), feature_num=128, hidden_num=64, batch_size=batchsize, gpu_flg=args.gpu)
+    model = Seq2Seq(len(id2word), feature_num=feature_num, hidden_num=hidden_num, batch_size=batchsize, gpu_flg=args.gpu)
     if args.gpu >= 0:
         model.to_gpu()
     optimizer = optimizers.AdaGrad(lr=0.01)
@@ -107,6 +114,7 @@ def main():
     #### train seq2seq model ####
     #############################
 
+    accum_loss = 0
     for num, epoch in enumerate(range(n_epoch)):
         total_loss = 0
         batch_num = 0
