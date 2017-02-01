@@ -4,22 +4,15 @@ Sequence to Sequence model
 you can also use batch, gpu
 args: --gpu (flg of GPU)
 """
-import argparse
+
 import numpy as np
 import chainer
 import chainer.functions as F
 import chainer.links as L
 from chainer import cuda, Variable
 
-# parse command line args
-parser = argparse.ArgumentParser()
-parser.add_argument('--gpu', '-g', default='-1', type=int, help='GPU ID (negative value indicates CPU)')
-args = parser.parse_args()
-gpu_device = 1
-if args.gpu >= 0:
-    cuda.check_cuda_available()
-    cuda.get_device(gpu_device).use()
-xp = cuda.cupy if args.gpu >= 0 else np
+# global variable (initialize)
+xp = cuda.cupy
 
 
 class Encoder(chainer.Chain):
@@ -66,13 +59,16 @@ class Decoder(chainer.Chain):
 
 class Seq2Seq(chainer.Chain):
 
-    def __init__(self, vocab_size, feature_num, hidden_num, batch_size):
+    def __init__(self, vocab_size, feature_num, hidden_num, batch_size, gpu_flg):
         """
         :param vocab_size: input vocab size
         :param feature_num: size of feature layer
         :param hidden_num: size of hidden layer
         :return:
         """
+        global xp
+        xp = cuda.cupy if gpu_flg >= 0 else np
+
         self.vocab_size = vocab_size
         self.hidden_num = hidden_num
         self.batch_size = batch_size

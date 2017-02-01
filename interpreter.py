@@ -1,19 +1,28 @@
 # -*- coding:utf-8 -*-
 
+import argparse
 from util import to_words, Dictionary
 from seq2seq import Seq2Seq
-from chainer import serializers
+from chainer import serializers, cuda
 
 # path info
-
 DATA_PATH = './data/pair_corpus.txt'
-MODEL_PATH = 'data/hege.model'
+MODEL_PATH = 'data/hoge.model'
+
+# parse command line args
+parser = argparse.ArgumentParser()
+parser.add_argument('--gpu', '-g', default='-1', type=int, help='GPU ID (negative value indicates CPU)')
+args = parser.parse_args()
+gpu_device = 1
+if args.gpu >= 0:
+    cuda.check_cuda_available()
+    cuda.get_device(gpu_device).use()
 
 
 def interpreter(data_path, model_path):
     """
-    インタープリタモード．
-    入力に対して返答を行う関数，"exit"を入力すると終了する．
+    Run this function, if you want to talk to seq2seq model.
+    if you type "exit", finish to talk.
     :param data_path: the path of corpus you made model learn
     :param model_path: the path of model you made learn
     :return:
@@ -24,8 +33,7 @@ def interpreter(data_path, model_path):
     print('')
 
     # rebuild seq2seq model
-    # model = Seq2Seq(len(dic.id2word), feature_num=128, hidden_num=64)
-    model = Seq2Seq(len(dic.id2word), feature_num=128, hidden_num=64, batch_size=1)
+    model = Seq2Seq(len(dic.id2word), feature_num=128, hidden_num=64, batch_size=1, gpu_flg=args.gpu)
     serializers.load_hdf5(model_path, model)
 
     # run conversation system
@@ -44,18 +52,17 @@ def interpreter(data_path, model_path):
 
         # convert word into ID
         input_sentence = [dic.word2id[word] for word in input_vocab if not dic.word2id.get(word) is None]
-        #print(input_sentence)
-        model.initialize()  # cellの状態を初期化
+
+        model.initialize()          # initialize cell
         sentence = model.generate(input_sentence, sentence_limit=len(input_sentence) + 30,
                                   word2id=dic.word2id, id2word=dic.id2word)
-        #print("teacher : ", " ".join(input_vocab[1:len(input_vocab) - 1]))
         print("-> ", sentence)
         print('')
 
 
 def test_run(data_path, model_path):
     """
-    動作テスト用関数
+    test function
     入力は訓練データを使用する，実際に学習した出力が帰ってくるかを確認
     :return:
     """
@@ -66,7 +73,7 @@ def test_run(data_path, model_path):
     print('')
 
     # rebuild seq2seq model
-    model = Seq2Seq(len(dic.id2word), feature_num=128, hidden_num=64, batch_size=1)
+    model = Seq2Seq(len(dic.id2word), feature_num=128, hidden_num=64, batch_size=1, gpu_flg=args.gpu)
     serializers.load_hdf5(model_path, model)
 
     # run an interpreter

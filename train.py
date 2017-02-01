@@ -6,11 +6,9 @@ args: --gpu (flg of GPU)
 """
 
 import argparse
-
 import numpy as np
 import chainer
 from chainer import cuda, optimizers, serializers
-
 from util import to_words, read_short_corpus, make_vocab_dict
 from seq2seq import Seq2Seq
 
@@ -58,7 +56,7 @@ def main():
     batchsize = 100
     accum_loss = 0
 
-    model = Seq2Seq(len(id2word), feature_num=128, hidden_num=64, batch_size=batchsize)
+    model = Seq2Seq(len(id2word), feature_num=128, hidden_num=64, batch_size=batchsize, gpu_flg=args.gpu)
     if args.gpu >= 0:
         model.to_gpu()
     optimizer = optimizers.AdaGrad(lr=0.01)
@@ -133,9 +131,9 @@ def main():
                 next_ids = xp.argmax(predict_mat.data, axis=1)
                 accum_loss += loss
 
-            model.cleargrads()                      # 勾配を0に初期化
-            accum_loss.backward()                   # 累計損失を使って，逆誤差伝播
-            accum_loss.unchain_backward()           # truncate BPTT 誤差逆伝播した変数や関数へのreferenceを削除
+            model.cleargrads()                      # initialize all grad to zero
+            accum_loss.backward()                   # back propagation
+            accum_loss.unchain_backward()           # truncate BPTT
             optimizer.update()                      # 最適化ルーチンの実行
             total_loss += float(accum_loss.data)
             batch_num += 1

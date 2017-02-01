@@ -1,4 +1,7 @@
+# -*- coding:utf-8 -*-
+
 import re
+import pickle
 
 
 def to_words(sentence):
@@ -63,8 +66,14 @@ class Dictionary:
         self.id2word = {}
         self.word2id = {}
 
+        # define sentence and corpus size
+        self.max_length = 20
+        self.max_pair_num = 65100
+
         if file_path is not None:
             self.create_dict(file_path)
+        else:
+            raise IsADirectoryError
 
     def create_dict(self, file_path):
         corpus_path = file_path
@@ -77,8 +86,12 @@ class Dictionary:
         for line in open(corpus_path, 'r', encoding='utf-8'):
             m = r.search(line)
             if m is not None:
-                input_vocab_list.append(m.group(1))
-                output_vocab_list.append(m.group(3))
+                if len(m.group(1).split(' ')) <= self.max_length and len(m.group(3).split(' ')) <= self.max_length:
+                    input_vocab_list.append(m.group(1))
+                    output_vocab_list.append(m.group(3))
+            if len(input_vocab_list) == self.max_pair_num:
+                print(self.max_pair_num, 'of pairs has been collected!')
+                break
         self.sentences = input_vocab_list + output_vocab_list
 
         # count words
