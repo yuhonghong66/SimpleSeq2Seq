@@ -10,12 +10,13 @@ import argparse
 import numpy as np
 import chainer
 from chainer import cuda, optimizers, serializers
-from util import to_words, read_short_corpus, make_vocab_dict
+from util import to_words, Dictionary
 from seq2seq import Seq2Seq
 
 
 # parse command line args
 parser = argparse.ArgumentParser()
+parser.add_argument('--data', '-d', default='data/min_test.txt', type=int, help='Data file directory')
 parser.add_argument('--gpu', '-g', default='-1', type=int, help='GPU ID (negative value indicates CPU)')
 parser.add_argument('--epoch', '-e', default=1000, type=int, help='number of epochs to learn')
 parser.add_argument('--feature_num', '-f', default=128, type=int, help='dimension of feature layer')
@@ -29,6 +30,7 @@ if args.gpu >= 0:
     cuda.get_device(gpu_device).use()
 xp = cuda.cupy if args.gpu >= 0 else np
 
+data_file = args.data
 n_epoch = args.epoch
 feature_num = args.feature_num
 hidden_num = args.hidden_num
@@ -41,29 +43,14 @@ def main():
     #### create dictionary ####
     ###########################
 
-    input_list, output_list = read_short_corpus()
-    sentences = input_list + output_list
-    id2word, word2id = make_vocab_dict(sentences)
-
-    start_id = len(id2word)
-    id2word[start_id] = "<start>"
-    word2id["<start>"] = start_id
-
-    end_id = start_id + 1
-    id2word[end_id] = "<eos>"
-    word2id["<eos>"] = end_id
-
-    padding_num = -1
-    id2word[padding_num] = "<pad>"
-    word2id["<pad>"] = padding_num
-
-    print('Vocabulary Size (number of words) :', len(id2word))
+    dic = Dictionary(data_file)
+    print('Vocabulary Size (number of words) :', len(dic.id2word))
 
     ######################
     #### create model ####
     ######################
 
-    model = Seq2Seq(len(id2word), feature_num=feature_num, hidden_num=hidden_num, batch_size=batchsize, gpu_flg=args.gpu)
+    model = Seq2Seq(len(dic.id2word), feature_num=feature_num, hidden_num=hidden_num, batch_size=batchsize, gpu_flg=args.gpu)
     if args.gpu >= 0:
         model.to_gpu()
     optimizer = optimizers.AdaGrad(lr=0.01)
@@ -77,7 +64,7 @@ def main():
     input_mat = []
     output_mat = []
     max_input_ren = max_output_ren = 0
-    for input_text, output_text in zip(input_list, output_list):
+    for input_text, output_text in zip(dic.input_list, dic.output_list):
 
         # convert to list
         input_text = to_words(input_text)
@@ -90,25 +77,22 @@ def main():
         max_input_ren = max(max_input_ren, len(input_text))
         max_output_ren = max(max_output_ren, len(output_text))
 
-        input_mat.append([word2id[word] for word in input_text])
-        output_mat.append([word2id[word] for word in output_text])
+        input_mat.append([dic.word2id[word] for word in input_text])
+        output_mat.append([dic.word2id[word] for word in output_text])
 
     # padding
     for li in input_mat:
         insert_num = max_input_ren - len(li)
         for _ in range(insert_num):
-            li.append(padding_num)
+            li.append(dic.word2id['pad'])
     for li in output_mat:
         insert_num = max_output_ren - len(li)
         for _ in range(insert_num):
-            li.append(padding_num)
-
-    print(len(input_mat), len(output_mat))
+            li.append(dic.word2id['pad'])
 
     # create batch matrix
     input_mat = xp.array(input_mat, dtype=xp.int32).T
     output_mat = xp.array(output_mat, dtype=xp.int32).T
-    print(input_mat.shape, output_mat.shape)
 
     #############################
     #### train seq2seq model ####
@@ -118,7 +102,7 @@ def main():
     for num, epoch in enumerate(range(n_epoch)):
         total_loss = 0
         batch_num = 0
-        for i in range(int(len(input_list) / batchsize)):
+        for i in range(int(len(dic.input_list) / batchsize)):
 
             # select batch data
             input_batch = input_mat[:, (i * batchsize):(i * batchsize) + batchsize]
@@ -129,7 +113,7 @@ def main():
             model.encode(input_batch, train=True)  # encode (output: hidden Variable)
 
             # Decode from encoded context
-            end_batch = xp.array([word2id["<eos>"] for _ in range(batchsize)])
+            end_batch = xp.array([dic.word2id["<eos>"] for _ in range(batchsize)])
             first_word = output_batch[0]
             loss, predict_mat = model.decode(end_batch, first_word, train=True)  # <eos>タグ(batchsize分)を初期入力に設定
             next_ids = xp.argmax(predict_mat.data, axis=1)

@@ -62,7 +62,8 @@ def make_vocab_dict(sentence_list):
 
 class Dictionary:
     def __init__(self, file_path=None):
-        self.sentences = []
+        self.input_list = []
+        self.output_list = []
         self.id2word = {}
         self.word2id = {}
 
@@ -92,11 +93,13 @@ class Dictionary:
             if len(input_vocab_list) == self.max_pair_num:
                 print(self.max_pair_num, 'of pairs has been collected!')
                 break
-        self.sentences = input_vocab_list + output_vocab_list
+        self.input_list = input_vocab_list
+        self.output_list = output_vocab_list
+        sentences = input_vocab_list + output_vocab_list
 
         # count words
         w_id = 0
-        for sentence in self.sentences:
+        for sentence in sentences:
             for word in sentence.split(' '):
                 word = re.sub(r"(\w+)(!+|\?+|…+|\.+|,+|~+)", r"\1", word)
                 if word not in self.word2id:

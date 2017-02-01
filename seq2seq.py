@@ -35,12 +35,12 @@ class Encoder(chainer.Chain):
     def __call__(self, x, c_pre, h_pre, train=True):
         e = F.tanh(self.xe(x))
         c_tmp, h_tmp = F.lstm(c_pre, self.eh(F.dropout(e, ratio=self.dropout_ratio, train=train)) + self.hh(h_pre))
-        tmp = chainer.Variable(x.data != -1).data.reshape(len(x), 1)    # xの-1であるかどうかのフラグを計算する
+        tmp = chainer.Variable(x.data != -1).data.reshape(len(x), 1)    # calculate flg whether x is -1 or not
         enable = tmp
         for _ in range(self.hidden_size - 1):
             enable = xp.hstack((enable, tmp))
-        c_next = F.where(enable, c_tmp, c_pre)     # x!=-1ならc_tmpを、x=-1ならc_preをc_nextに代入
-        h_next = F.where(enable, h_tmp, h_pre)     # x!=-1ならh_tmpを、x=-1ならh_preをh_nextに代入
+        c_next = F.where(enable, c_tmp, c_pre)     # if x!=-1, c_tmp . elseif x=-1, c_pre.
+        h_next = F.where(enable, h_tmp, h_pre)     # if x!=-1, h_tmp . elseif x=-1, h_pre.
         return c_next, h_next
 
 

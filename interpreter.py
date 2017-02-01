@@ -62,8 +62,9 @@ def interpreter(data_path, model_path):
 
 def test_run(data_path, model_path):
     """
-    test function
-    入力は訓練データを使用する，実際に学習した出力が帰ってくるかを確認
+    Test function.
+    Input is training data.
+    Output have to be the sentence which is correct data in training phase.
     :return:
     """
 
@@ -77,19 +78,19 @@ def test_run(data_path, model_path):
     serializers.load_hdf5(model_path, model)
 
     # run an interpreter
-    for num, sentence in enumerate(dic.sentences):
+    for num, sentence in enumerate(dic.input_list):
         input_vocab = to_words(sentence)
         input_vocab.insert(0, "<start>")
         input_vocab.append("<eos>")
 
-        # id変換
+        # convert word into ID
         input_sentence = [dic.word2id[word] for word in input_vocab if not dic.word2id.get(word) is None]
 
         model.initialize()  # initialize cell
         sentence = model.generate(input_sentence, sentence_limit=len(input_sentence) + 30,
                                   word2id=dic.word2id, id2word=dic.id2word)
         print("teacher : ", " ".join(input_vocab[1:len(input_vocab)-1]))
-        print("correct :", "".join(dic.sentences[int(len(dic.sentences)/2) + num]))
+        print("correct :", "".join(dic.output_list[num]))
         print("-> ", sentence)
         print('')
 
