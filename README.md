@@ -3,11 +3,11 @@
 This repository is the implementation of simple seq2seq model (not containing attention system).
 Seq2seq Model is implemented by [chainer][chainer].
 
-__caution__: this model is not used NStepLSTM. 
+__Caution__: This model is not used NStepLSTM. 
 If you only want to use seq2seq model in chainer, you should use [chainer's formal example][chainer_seq2seq]. 
 
-[chainer]: http://google.com/ "chainer"
-[chainer_seq2seq]: http://google.com/ "chainer_seq2seq"
+[chainer]: https://github.com/pfnet/chainer "chainer"
+[chainer_seq2seq]: https://github.com/pfnet/chainer/blob/seq2seq/examples/seq2seq/seq2seq.py "chainer_seq2seq"
 
 
 
@@ -83,11 +83,11 @@ from the [Cornell Movie-Dialogs Corpus][cornell].
 
 ## Reference 
 
-Sutskever, I., Vinyals, O., and Le, Q. .
+Ilya Sutskever, Oriol Vinyals, and Quoc V. Le.
 [Sequence to sequence learning with neural networks.][s2s_paper]
 In Advances in Neural Information Processing Systems (NIPS 2014).
 
-[s2s_paper]: http://google.com/ "s2s_paper"
+[s2s_paper]: http://papers.nips.cc/paper/5346-information-based-learning-by-agents-in-unbounded-state-spaces.pdf "s2s_paper"
 
 ## Author
 

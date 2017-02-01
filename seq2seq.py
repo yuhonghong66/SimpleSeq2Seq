@@ -4,7 +4,7 @@ Sample script of Sequence to Sequence model.
 You can also use Batch and GPU.
 This model is based on below paper.
 
-Sutskever, I., Vinyals, O., and Le, Q. .
+Ilya Sutskever, Oriol Vinyals, and Quoc V. Le.
 Sequence to sequence learning with neural networks.
 In Advances in Neural Information Processing Systems (NIPS 2014).
 """
