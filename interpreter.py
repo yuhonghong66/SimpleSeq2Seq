@@ -13,7 +13,7 @@ MODEL_PATH = 'data/hoge.model'
 parser = argparse.ArgumentParser()
 parser.add_argument('--gpu', '-g', default='-1', type=int, help='GPU ID (negative value indicates CPU)')
 args = parser.parse_args()
-gpu_device = 1
+gpu_device = 0
 if args.gpu >= 0:
     cuda.check_cuda_available()
     cuda.get_device(gpu_device).use()
@@ -33,7 +33,7 @@ def interpreter(data_path, model_path):
     print('')
 
     # rebuild seq2seq model
-    model = Seq2Seq(len(dic.id2word), feature_num=128, hidden_num=64, batch_size=1, gpu_flg=args.gpu)
+    model = Seq2Seq(len(dic.id2word), feature_num=256, hidden_num=256, batch_size=1, gpu_flg=args.gpu)
     serializers.load_hdf5(model_path, model)
 
     # run conversation system
@@ -74,7 +74,7 @@ def test_run(data_path, model_path):
     print('')
 
     # rebuild seq2seq model
-    model = Seq2Seq(len(dic.id2word), feature_num=128, hidden_num=64, batch_size=1, gpu_flg=args.gpu)
+    model = Seq2Seq(len(dic.id2word), feature_num=256, hidden_num=256, batch_size=1, gpu_flg=args.gpu)
     serializers.load_hdf5(model_path, model)
 
     # run an interpreter

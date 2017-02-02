@@ -16,15 +16,15 @@ from seq2seq import Seq2Seq
 
 # parse command line args
 parser = argparse.ArgumentParser()
-parser.add_argument('--data', '-d', default='data/min_test.txt', type=int, help='Data file directory')
+parser.add_argument('--data', '-d', default='data/pair_corpus.txt', type=str, help='Data file directory')
 parser.add_argument('--gpu', '-g', default='-1', type=int, help='GPU ID (negative value indicates CPU)')
 parser.add_argument('--epoch', '-e', default=1000, type=int, help='number of epochs to learn')
-parser.add_argument('--feature_num', '-f', default=128, type=int, help='dimension of feature layer')
-parser.add_argument('--hidden_num', '-h', default=64, type=int, help='dimension of hidden layer')
+parser.add_argument('--feature_num', '-f', default=256, type=int, help='dimension of feature layer')
+parser.add_argument('--hidden_num', '-hi', default=256, type=int, help='dimension of hidden layer')
 parser.add_argument('--batchsize', '-b', default=100, type=int, help='learning minibatch size')
 args = parser.parse_args()
 
-gpu_device = 1
+gpu_device = 0
 if args.gpu >= 0:
     cuda.check_cuda_available()
     cuda.get_device(gpu_device).use()
@@ -84,11 +84,11 @@ def main():
     for li in input_mat:
         insert_num = max_input_ren - len(li)
         for _ in range(insert_num):
-            li.append(dic.word2id['pad'])
+            li.append(dic.word2id['<pad>'])
     for li in output_mat:
         insert_num = max_output_ren - len(li)
         for _ in range(insert_num):
-            li.append(dic.word2id['pad'])
+            li.append(dic.word2id['<pad>'])
 
     # create batch matrix
     input_mat = xp.array(input_mat, dtype=xp.int32).T
@@ -136,9 +136,9 @@ def main():
         if (epoch + 1) % 10 == 0:
             print('-----', epoch + 1, ' times -----')
             print('save the model')
-            serializers.save_hdf5('data/' + 'min' + str(epoch) + '.model', model)
+            serializers.save_hdf5('data/' + str(epoch) + '.model', model)
             print('save the optimizer')
-            serializers.save_hdf5('data/' + 'min' + str(epoch) + '.state', optimizer)
+            serializers.save_hdf5('data/' + str(epoch) + '.state', optimizer)
 
         print('Epoch: ', num, 'Total loss: {:.2f}'.format(total_loss))
 

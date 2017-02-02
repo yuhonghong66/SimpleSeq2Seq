@@ -16,7 +16,7 @@ import chainer.links as L
 from chainer import cuda, Variable
 
 # global variable (initialize)
-xp = cuda.cupy
+xp = np
 
 
 class Encoder(chainer.Chain):
