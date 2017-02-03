@@ -45,7 +45,8 @@ from the [Cornell Movie-Dialogs Corpus][cornell].
 - pyenv 
 - anaconda3-2.4.0
 - chainer (1.5 ~ latest)
-- gensim 
+- gensim
+- nkf
 
 ## Usage
 

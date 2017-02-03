@@ -7,7 +7,7 @@ from chainer import serializers, cuda
 
 # path info
 DATA_PATH = './data/pair_corpus.txt'
-MODEL_PATH = 'data/hoge.model'
+MODEL_PATH = 'data/9.model'
 
 # parse command line args
 parser = argparse.ArgumentParser()
@@ -100,4 +100,4 @@ def test_run(data_path, model_path):
 
 if __name__ == '__main__':
     interpreter(DATA_PATH, MODEL_PATH)
-    #test_run(DATA_PATH, MODEL_PATH)
+    test_run(DATA_PATH, MODEL_PATH)
