@@ -2,6 +2,9 @@
 
 import re
 import pickle
+import unicodedata
+from gensim import corpora
+from nltk import word_tokenize
 
 
 def to_words(sentence):
@@ -9,120 +12,62 @@ def to_words(sentence):
     return sentence_list
 
 
-def read_short_corpus():
-    """
-    Read conversation data（post-reply pairs)
-    単語数が20単語以下から構成されている文書ペアのみ記録
-    :return:　post_sentence_list and reply_sentence_list
-    """
-
-    # define sentence and corpus size
-    max_length = 20
-    max_pair_num = 65100
-
-    # read data from txt file
-    corpus_path = './data/pair_corpus.txt'
-    input_vocab_list = []
-    output_vocab_list = []
-    pattern = '(.*?)(\t)(.*?)(\n|\r\n)'
-    r = re.compile(pattern)
-    for line in open(corpus_path, 'r', encoding='utf-8'):
-        m = r.search(line)
-        if m is not None:
-            if len(m.group(1).split(' ')) <= max_length and len(m.group(3).split(' ')) <= max_length:
-                input_vocab_list.append(m.group(1))
-                output_vocab_list.append(m.group(3))
-        if len(input_vocab_list) == max_pair_num:
-            print(max_pair_num, 'of pairs has been collected!')
-            break
-
-    return input_vocab_list, output_vocab_list
-
-
-def make_vocab_dict(sentence_list):
-    """
-    make dictionary using text data
-    :param sentence_list: list of sentences (each type is string)
-    :return: id-word dic, word-id dic
-    """
-    id2word = {}
-    word2id = {}
-    w_id = 0
-    for sentence in sentence_list:
-        for word in sentence.split(' '):
-            word = re.sub(r"(\w+)(!+|\?+|…+|\.+|,+|~+)", r"\1", word)
-            if word not in word2id:
-                id2word[w_id] = word
-                word2id[word] = w_id
-                w_id += 1
-    return id2word, word2id
-
-
-### gensim使わない用試作 ###
-
-class Dictionary:
-    def __init__(self, file_path=None):
-        self.input_list = []
-        self.output_list = []
-        self.id2word = {}
-        self.word2id = {}
-
-        # define sentence and corpus size
-        self.max_length = 20
-        self.max_pair_num = 65100
+class ConvCorpus:
+    def __init__(self, file_path):
+        self.posts = []
+        self.cmnts = []
+        self.dic = None
 
         if file_path is not None:
-            self._create_dict(file_path)
-        else:
-            raise IsADirectoryError
+            self._construct_dict(file_path)
 
-    def _create_dict(self, file_path):
-        corpus_path = file_path
-        input_vocab_list = []
-        output_vocab_list = []
+    def _construct_dict(self, file_path):
+        # define sentence and corpus size
+        max_length = 20
+        max_pair_num = 65100
 
-        # read corpus data (post <TAB> comment)
+        # preprocess
+        posts = cmnts = []
         pattern = '(.*?)(\t)(.*?)(\n|\r\n)'
         r = re.compile(pattern)
-        for line in open(corpus_path, 'r', encoding='utf-8'):
+        for line in open(file_path, 'r', encoding='utf-8'):
             m = r.search(line)
             if m is not None:
-                if len(m.group(1).split(' ')) <= self.max_length and len(m.group(3).split(' ')) <= self.max_length:
-                    input_vocab_list.append(m.group(1))
-                    output_vocab_list.append(m.group(3))
-            if len(input_vocab_list) == self.max_pair_num:
-                print(self.max_pair_num, 'of pairs has been collected!')
-                break
-        self.input_list = input_vocab_list
-        self.output_list = output_vocab_list
-        sentences = input_vocab_list + output_vocab_list
+                post = [unicodedata.normalize('NFKC', word.lower()) for word in word_tokenize(m.group(1))]
+                cmnt = [unicodedata.normalize('NFKC', word.lower()) for word in word_tokenize(m.group(3))]
+                if len(post) <= max_length and len(cmnt) <= max_length:
+                    posts.append(post)
+                    cmnts.append(cmnt)
+                if len(posts) == max_pair_num:
+                    print(max_pair_num, 'of pairs has been collected!')
+                    break
 
-        # count words
-        w_id = 0
-        for sentence in sentences:
-            for word in sentence.split(' '):
-                word = re.sub(r"(\w+)(!+|\?+|…+|\.+|,+|~+)", r"\1", word)
-                if word not in self.word2id:
-                    self.id2word[w_id] = word
-                    self.word2id[word] = w_id
-                    w_id += 1
+        # construct dictionary
+        self.dic = corpora.Dictionary(posts + cmnts, prune_at=None)
+        self.dic.filter_extremes(no_below=3, no_above=1.0, keep_n=15000)      # cut the size of dictionary
 
-        # insert "<start>" and "<eos>"
-        start_id = len(self.id2word)
-        self.id2word[start_id] = "<start>"
-        self.word2id["<start>"] = start_id
-        end_id = start_id + 1
-        self.id2word[end_id] = "<eos>"
-        self.word2id["<eos>"] = end_id
-        padding_num = -1
-        self.id2word[padding_num] = "<pad>"
-        self.word2id["<pad>"] = padding_num
+        # add symbols
+        self.dic.token2id['<start>'] = len(self.dic.token2id)
+        self.dic.token2id['<eos>'] = len(self.dic.token2id)
+        self.dic.token2id['<unk>'] = len(self.dic.token2id)
+        self.dic.token2id['<pad>'] = -1
 
-    def save(self, save_path):
-        with open(save_path, 'wb') as f:
-            pickle.dump(self, f)
+        # make ID corpus
+        for post in posts:
+            self.posts.append([self.dic.token2id.get(word, self.dic.token2id['<unk>']) for word in post])
+        for cmnt in cmnts:
+            self.cmnts.append([self.dic.token2id.get(word, self.dic.token2id['<unk>']) for word in cmnt])
 
-    @staticmethod
-    def load(load_path):
-        with open(load_path, 'rb') as f:
-            return pickle.load(f)
+    def save(self, save_dir):
+        self.dic.save(save_dir + 'dictionary.dict')
+        with open(save_dir + 'posts.list', 'wb') as f:
+            pickle.dump(self.posts, f)
+        with open(save_dir + 'cmnts.list', 'wb') as f:
+            pickle.dump(self.cmnts, f)
+
+    def load(self, load_dir):
+        self.dic = corpora.Dictionary.load(load_dir + 'dictionary.dict')
+        with open(load_dir + 'posts.list', 'rb') as f:
+            self.posts = pickle.load(f)
+        with open(load_dir + 'cmnts.list', 'rb') as f:
+            self.cmnts = pickle.load(f)

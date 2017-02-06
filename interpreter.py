@@ -1,13 +1,13 @@
 # -*- coding:utf-8 -*-
 
 import argparse
-from util import to_words, Dictionary
+from util import to_words, ConvCorpus
 from seq2seq import Seq2Seq
 from chainer import serializers, cuda
 
 # path info
 DATA_PATH = './data/pair_corpus.txt'
-MODEL_PATH = 'data/9.model'
+MODEL_PATH = 'data/499.model'
 
 # parse command line args
 parser = argparse.ArgumentParser()
@@ -28,12 +28,12 @@ def interpreter(data_path, model_path):
     :return:
     """
     # call dictionary class
-    dic = Dictionary(data_path)
-    print('Vocabulary Size (number of words) :', len(dic.id2word))
+    corpus = ConvCorpus(data_path)
+    print('Vocabulary Size (number of words) :', len(corpus.dic.token2id))
     print('')
 
     # rebuild seq2seq model
-    model = Seq2Seq(len(dic.id2word), feature_num=256, hidden_num=256, batch_size=1, gpu_flg=args.gpu)
+    model = Seq2Seq(len(corpus.dic.token2id), feature_num=256, hidden_num=256, batch_size=1, gpu_flg=args.gpu)
     serializers.load_hdf5(model_path, model)
 
     # run conversation system
@@ -51,11 +51,11 @@ def interpreter(data_path, model_path):
         input_vocab.append("<eos>")
 
         # convert word into ID
-        input_sentence = [dic.word2id[word] for word in input_vocab if not dic.word2id.get(word) is None]
+        input_sentence = [corpus.dic.token2id[word] for word in input_vocab if not corpus.dic.token2id.get(word) is None]
 
         model.initialize()          # initialize cell
         sentence = model.generate(input_sentence, sentence_limit=len(input_sentence) + 30,
-                                  word2id=dic.word2id, id2word=dic.id2word)
+                                  word2id=corpus.dic.token2id, id2word=corpus.dic)
         print("-> ", sentence)
         print('')
 
@@ -68,29 +68,26 @@ def test_run(data_path, model_path):
     :return:
     """
 
-    dic = Dictionary(data_path)
+    corpus = ConvCorpus(data_path)
 
-    print('Vocabulary Size (number of words) :', len(dic.id2word))
+    print('Vocabulary Size (number of words) :', len(corpus.dic.token2id))
     print('')
 
     # rebuild seq2seq model
-    model = Seq2Seq(len(dic.id2word), feature_num=256, hidden_num=256, batch_size=1, gpu_flg=args.gpu)
+    model = Seq2Seq(len(corpus.dic.token2id), feature_num=256, hidden_num=256, batch_size=1, gpu_flg=args.gpu)
     serializers.load_hdf5(model_path, model)
 
     # run an interpreter
-    for num, sentence in enumerate(dic.input_list):
-        input_vocab = to_words(sentence)
-        input_vocab.insert(0, "<start>")
-        input_vocab.append("<eos>")
-
-        # convert word into ID
-        input_sentence = [dic.word2id[word] for word in input_vocab if not dic.word2id.get(word) is None]
+    for num, input_sentence in enumerate(corpus.posts):
+        id_sequence = input_sentence
+        input_sentence.insert(0, corpus.dic.token2id["<start>"])
+        input_sentence.append(corpus.dic.token2id["<eos>"])
 
         model.initialize()  # initialize cell
         sentence = model.generate(input_sentence, sentence_limit=len(input_sentence) + 30,
-                                  word2id=dic.word2id, id2word=dic.id2word)
-        print("teacher : ", " ".join(input_vocab[1:len(input_vocab)-1]))
-        print("correct :", "".join(dic.output_list[num]))
+                                  word2id=corpus.dic.token2id, id2word=corpus.dic)
+        print("teacher : ", " ".join([corpus.dic[w_id] for w_id in id_sequence]))
+        print("correct :", "".join([corpus.dic[w_id] for w_id in corpus.posts[num]]))
         print("-> ", sentence)
         print('')
 
@@ -99,5 +96,5 @@ def test_run(data_path, model_path):
 
 
 if __name__ == '__main__':
-    interpreter(DATA_PATH, MODEL_PATH)
+    #interpreter(DATA_PATH, MODEL_PATH)
     test_run(DATA_PATH, MODEL_PATH)

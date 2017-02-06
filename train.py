@@ -6,11 +6,12 @@ You can also use Batch and GPU.
 args: --gpu (flg of GPU, if you want to use GPU, please write "--gpu 1")
 """
 
+import os
 import argparse
 import numpy as np
 import chainer
 from chainer import cuda, optimizers, serializers
-from util import to_words, Dictionary
+from util import ConvCorpus
 from seq2seq import Seq2Seq
 
 
@@ -43,14 +44,19 @@ def main():
     #### create dictionary ####
     ###########################
 
-    dic = Dictionary(data_file)
-    print('Vocabulary Size (number of words) :', len(dic.id2word))
+    if os.path.exists('./data/corpus/dictionary.dict'):
+        corpus = ConvCorpus(file_path=None)
+        corpus.load(load_dir='./data/corpus/')
+    else:
+        corpus = ConvCorpus(args.data)
+        corpus.save(save_dir='./data/corpus/')
+    print('Vocabulary Size (number of words) :', len(corpus.dic.token2id))
 
     ######################
     #### create model ####
     ######################
 
-    model = Seq2Seq(len(dic.id2word), feature_num=feature_num, hidden_num=hidden_num, batch_size=batchsize, gpu_flg=args.gpu)
+    model = Seq2Seq(len(corpus.dic.token2id), feature_num=feature_num, hidden_num=hidden_num, batch_size=batchsize, gpu_flg=args.gpu)
     if args.gpu >= 0:
         model.to_gpu()
     optimizer = optimizers.AdaGrad(lr=0.01)
@@ -64,35 +70,33 @@ def main():
     input_mat = []
     output_mat = []
     max_input_ren = max_output_ren = 0
-    for input_text, output_text in zip(dic.input_list, dic.output_list):
+    for input_text, output_text in zip(corpus.posts, corpus.cmnts):
 
         # convert to list
-        input_text = to_words(input_text)
-        input_text.insert(0, "<start>")
-        input_text.append("<eos>")
-        output_text = to_words(output_text)
-        output_text.append("<eos>")
+        input_text.insert(0, corpus.dic.token2id["<start>"])
+        input_text.append(corpus.dic.token2id["<eos>"])
+        output_text.append(corpus.dic.token2id["<eos>"])
 
         # update max sentence length
         max_input_ren = max(max_input_ren, len(input_text))
         max_output_ren = max(max_output_ren, len(output_text))
 
-        input_mat.append([dic.word2id[word] for word in input_text])
-        output_mat.append([dic.word2id[word] for word in output_text])
+        input_mat.append(input_text)
+        output_mat.append(output_text)
 
     # padding
     for li in input_mat:
         insert_num = max_input_ren - len(li)
         for _ in range(insert_num):
-            li.append(dic.word2id['<pad>'])
+            li.append(corpus.dic.token2id['<pad>'])
     for li in output_mat:
         insert_num = max_output_ren - len(li)
         for _ in range(insert_num):
-            li.append(dic.word2id['<pad>'])
+            li.append(corpus.dic.token2id['<pad>'])
 
     # create batch matrix
-    input_mat = xp.array(input_mat, dtype=xp.int32).T
-    output_mat = xp.array(output_mat, dtype=xp.int32).T
+    input_mat = np.array(input_mat, dtype=np.int32).T
+    output_mat = np.array(output_mat, dtype=np.int32).T
 
     #############################
     #### train seq2seq model ####
@@ -102,7 +106,7 @@ def main():
     for num, epoch in enumerate(range(n_epoch)):
         total_loss = 0
         batch_num = 0
-        for i in range(int(len(dic.input_list) / batchsize)):
+        for i in range(int(len(corpus.posts) / batchsize)):
 
             # select batch data
             input_batch = input_mat[:, (i * batchsize):(i * batchsize) + batchsize]
@@ -113,7 +117,7 @@ def main():
             model.encode(input_batch, train=True)  # encode (output: hidden Variable)
 
             # Decode from encoded context
-            end_batch = xp.array([dic.word2id["<eos>"] for _ in range(batchsize)])
+            end_batch = xp.array([corpus.dic.token2id["<eos>"] for _ in range(batchsize)])
             first_word = output_batch[0]
             loss, predict_mat = model.decode(end_batch, first_word, train=True)  # <eos>タグ(batchsize分)を初期入力に設定
             next_ids = xp.argmax(predict_mat.data, axis=1)
