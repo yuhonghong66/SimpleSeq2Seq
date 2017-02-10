@@ -24,13 +24,14 @@ class ConvCorpus:
     def _construct_dict(self, file_path):
         # define sentence and corpus size
         max_length = 20
-        max_pair_num = 65100
+        batch_size = 100
 
         # preprocess
-        posts = cmnts = []
+        posts = []
+        cmnts = []
         pattern = '(.*?)(\t)(.*?)(\n|\r\n)'
         r = re.compile(pattern)
-        for line in open(file_path, 'r', encoding='utf-8'):
+        for index, line in enumerate(open(file_path, 'r', encoding='utf-8')):
             m = r.search(line)
             if m is not None:
                 post = [unicodedata.normalize('NFKC', word.lower()) for word in word_tokenize(m.group(1))]
@@ -38,13 +39,16 @@ class ConvCorpus:
                 if len(post) <= max_length and len(cmnt) <= max_length:
                     posts.append(post)
                     cmnts.append(cmnt)
-                if len(posts) == max_pair_num:
-                    print(max_pair_num, 'of pairs has been collected!')
-                    break
+
+        # cut corpus for a batch size
+        remove_num = len(posts) - (int(len(posts) / batch_size) * batch_size)
+        del posts[len(posts)-remove_num:]
+        del cmnts[len(cmnts)-remove_num:]
+        print(len(posts), 'of pairs has been collected!')
 
         # construct dictionary
         self.dic = corpora.Dictionary(posts + cmnts, prune_at=None)
-        self.dic.filter_extremes(no_below=3, no_above=1.0, keep_n=15000)      # cut the size of dictionary
+        self.dic.filter_extremes(no_below=3, no_above=1.0, keep_n=10000)      # cut the size of dictionary
 
         # add symbols
         self.dic.token2id['<start>'] = len(self.dic.token2id)
@@ -53,10 +57,8 @@ class ConvCorpus:
         self.dic.token2id['<pad>'] = -1
 
         # make ID corpus
-        for post in posts:
-            self.posts.append([self.dic.token2id.get(word, self.dic.token2id['<unk>']) for word in post])
-        for cmnt in cmnts:
-            self.cmnts.append([self.dic.token2id.get(word, self.dic.token2id['<unk>']) for word in cmnt])
+        self.posts = [[self.dic.token2id.get(word, self.dic.token2id['<unk>']) for word in post] for post in posts]
+        self.cmnts = [[self.dic.token2id.get(word, self.dic.token2id['<unk>']) for word in cmnt] for cmnt in cmnts]
 
     def save(self, save_dir):
         self.dic.save(save_dir + 'dictionary.dict')

@@ -70,6 +70,7 @@ def main():
     input_mat = []
     output_mat = []
     max_input_ren = max_output_ren = 0
+
     for input_text, output_text in zip(corpus.posts, corpus.cmnts):
 
         # convert to list
@@ -106,11 +107,13 @@ def main():
     for num, epoch in enumerate(range(n_epoch)):
         total_loss = 0
         batch_num = 0
-        for i in range(int(len(corpus.posts) / batchsize)):
+        perm = np.random.permutation(len(corpus.posts))
+
+        for i in range(0, len(corpus.posts), batchsize):
 
             # select batch data
-            input_batch = input_mat[:, (i * batchsize):(i * batchsize) + batchsize]
-            output_batch = output_mat[:, (i * batchsize):(i * batchsize) + batchsize]
+            input_batch = input_mat[:, perm[i:i + batchsize]]
+            output_batch = output_mat[:, perm[i:i + batchsize]]
 
             # Encode a sentence
             model.initialize()                     # initialize cell
