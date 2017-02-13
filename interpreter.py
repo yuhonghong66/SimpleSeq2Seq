@@ -6,8 +6,8 @@ from seq2seq import Seq2Seq
 from chainer import serializers, cuda
 
 # path info
-DATA_PATH = './data/pair_corpus.txt'
-MODEL_PATH = 'data/499.model'
+DATA_PATH = './data/pair_corpus.txt_temp'
+MODEL_PATH = 'data/299.model'
 
 # parse command line args
 parser = argparse.ArgumentParser()
@@ -28,7 +28,8 @@ def interpreter(data_path, model_path):
     :return:
     """
     # call dictionary class
-    corpus = ConvCorpus(data_path)
+    corpus = ConvCorpus(file_path=None)
+    corpus.load(load_dir='./data/corpus/')
     print('Vocabulary Size (number of words) :', len(corpus.dic.token2id))
     print('')
 
@@ -68,7 +69,8 @@ def test_run(data_path, model_path):
     :return:
     """
 
-    corpus = ConvCorpus(data_path)
+    corpus = ConvCorpus(file_path=None)
+    corpus.load(load_dir='./data/corpus/')
 
     print('Vocabulary Size (number of words) :', len(corpus.dic.token2id))
     print('')
@@ -87,11 +89,11 @@ def test_run(data_path, model_path):
         sentence = model.generate(input_sentence, sentence_limit=len(input_sentence) + 30,
                                   word2id=corpus.dic.token2id, id2word=corpus.dic)
         print("teacher : ", " ".join([corpus.dic[w_id] for w_id in id_sequence]))
-        print("correct :", "".join([corpus.dic[w_id] for w_id in corpus.posts[num]]))
+        print("correct :", " ".join([corpus.dic[w_id] for w_id in corpus.cmnts[num]]))
         print("-> ", sentence)
         print('')
 
-        if num == 10:
+        if num == 30:
             break
 
 
