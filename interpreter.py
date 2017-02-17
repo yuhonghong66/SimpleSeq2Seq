@@ -1,6 +1,8 @@
 # -*- coding:utf-8 -*-
 
 import argparse
+import unicodedata
+from nltk import word_tokenize
 from util import to_words, ConvCorpus
 from seq2seq import Seq2Seq
 from chainer import serializers, cuda
@@ -34,7 +36,7 @@ def interpreter(data_path, model_path):
     print('')
 
     # rebuild seq2seq model
-    model = Seq2Seq(len(corpus.dic.token2id), feature_num=256, hidden_num=256, batch_size=1, gpu_flg=args.gpu)
+    model = Seq2Seq(len(corpus.dic.token2id), feature_num=300, hidden_num=300, batch_size=1, gpu_flg=args.gpu)
     serializers.load_hdf5(model_path, model)
 
     # run conversation system
@@ -47,9 +49,9 @@ def interpreter(data_path, model_path):
             print('See you again!')
             break
 
-        input_vocab = to_words(sentence)
-        input_vocab.insert(0, "<start>")
-        input_vocab.append("<eos>")
+        input_vocab = [unicodedata.normalize('NFKC', word.lower()) for word in word_tokenize(sentence)]
+        input_vocab.reverse()
+        input_vocab.insert(0, "<eos>")
 
         # convert word into ID
         input_sentence = [corpus.dic.token2id[word] for word in input_vocab if not corpus.dic.token2id.get(word) is None]
@@ -76,14 +78,13 @@ def test_run(data_path, model_path):
     print('')
 
     # rebuild seq2seq model
-    model = Seq2Seq(len(corpus.dic.token2id), feature_num=256, hidden_num=256, batch_size=1, gpu_flg=args.gpu)
+    model = Seq2Seq(len(corpus.dic.token2id), feature_num=300, hidden_num=300, batch_size=1, gpu_flg=args.gpu)
     serializers.load_hdf5(model_path, model)
 
     # run an interpreter
     for num, input_sentence in enumerate(corpus.posts):
         id_sequence = input_sentence
-        input_sentence.insert(0, corpus.dic.token2id["<start>"])
-        input_sentence.append(corpus.dic.token2id["<eos>"])
+        input_sentence.insert(0, corpus.dic.token2id["<eos>"])
 
         model.initialize()  # initialize cell
         sentence = model.generate(input_sentence, sentence_limit=len(input_sentence) + 30,

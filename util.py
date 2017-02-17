@@ -12,16 +12,27 @@ def to_words(sentence):
     return sentence_list
 
 
+def is_english(string):
+    for ch in string:
+        try:
+            name = unicodedata.name(ch)
+        except ValueError:
+            return False
+        if "CJK UNIFIED" in name or "HIRAGANA" in name or "KATAKANA" in name:
+            return False
+    return True
+
+
 class ConvCorpus:
-    def __init__(self, file_path):
+    def __init__(self, file_path, size_filter=True):
         self.posts = []
         self.cmnts = []
         self.dic = None
 
         if file_path is not None:
-            self._construct_dict(file_path)
+            self._construct_dict(file_path, size_filter)
 
-    def _construct_dict(self, file_path):
+    def _construct_dict(self, file_path, size_filter):
         # define sentence and corpus size
         max_length = 20
         batch_size = 100
@@ -29,16 +40,21 @@ class ConvCorpus:
         # preprocess
         posts = []
         cmnts = []
-        pattern = '(.*?)(\t)(.*?)(\n|\r\n)'
+        pattern = '(.+?)(\t)(.+?)(\n|\r\n)'
         r = re.compile(pattern)
         for index, line in enumerate(open(file_path, 'r', encoding='utf-8')):
             m = r.search(line)
             if m is not None:
-                post = [unicodedata.normalize('NFKC', word.lower()) for word in word_tokenize(m.group(1))]
-                cmnt = [unicodedata.normalize('NFKC', word.lower()) for word in word_tokenize(m.group(3))]
-                if len(post) <= max_length and len(cmnt) <= max_length:
-                    posts.append(post)
-                    cmnts.append(cmnt)
+                if is_english(m.group(1) + m.group(3)):
+                    post = [unicodedata.normalize('NFKC', word.lower()) for word in word_tokenize(m.group(1))]
+                    cmnt = [unicodedata.normalize('NFKC', word.lower()) for word in word_tokenize(m.group(3))]
+                    if size_filter:
+                        if len(post) <= max_length and len(cmnt) <= max_length:
+                            posts.append(post)
+                            cmnts.append(cmnt)
+                    else:
+                        posts.append(post)
+                        cmnts.append(cmnt)
 
         # cut corpus for a batch size
         remove_num = len(posts) - (int(len(posts) / batch_size) * batch_size)
@@ -48,7 +64,6 @@ class ConvCorpus:
 
         # construct dictionary
         self.dic = corpora.Dictionary(posts + cmnts, prune_at=None)
-        self.dic.filter_extremes(no_below=3, no_above=1.0, keep_n=10000)      # cut the size of dictionary
 
         # add symbols
         self.dic.token2id['<start>'] = len(self.dic.token2id)

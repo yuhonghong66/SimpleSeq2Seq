@@ -17,11 +17,11 @@ from seq2seq import Seq2Seq
 
 # parse command line args
 parser = argparse.ArgumentParser()
-parser.add_argument('--data', '-d', default='data/pair_corpus.txt', type=str, help='Data file directory')
+parser.add_argument('--data', '-d', default='data/cut_corpus100.txt', type=str, help='Data file directory')
 parser.add_argument('--gpu', '-g', default='-1', type=int, help='GPU ID (negative value indicates CPU)')
 parser.add_argument('--epoch', '-e', default=1000, type=int, help='number of epochs to learn')
-parser.add_argument('--feature_num', '-f', default=256, type=int, help='dimension of feature layer')
-parser.add_argument('--hidden_num', '-hi', default=256, type=int, help='dimension of hidden layer')
+parser.add_argument('--feature_num', '-f', default=300, type=int, help='dimension of feature layer')
+parser.add_argument('--hidden_num', '-hi', default=300, type=int, help='dimension of hidden layer')
 parser.add_argument('--batchsize', '-b', default=100, type=int, help='learning minibatch size')
 args = parser.parse_args()
 
@@ -56,7 +56,8 @@ def main():
     #### create model ####
     ######################
 
-    model = Seq2Seq(len(corpus.dic.token2id), feature_num=feature_num, hidden_num=hidden_num, batch_size=batchsize, gpu_flg=args.gpu)
+    model = Seq2Seq(len(corpus.dic.token2id), feature_num=feature_num,
+                    hidden_num=hidden_num, batch_size=batchsize, gpu_flg=args.gpu)
     if args.gpu >= 0:
         model.to_gpu()
     optimizer = optimizers.AdaGrad(lr=0.01)
@@ -74,8 +75,8 @@ def main():
     for input_text, output_text in zip(corpus.posts, corpus.cmnts):
 
         # convert to list
-        input_text.insert(0, corpus.dic.token2id["<start>"])
-        input_text.append(corpus.dic.token2id["<eos>"])
+        input_text.reverse()                               # encode words in a reverse order
+        input_text.insert(0, corpus.dic.token2id["<eos>"])
         output_text.append(corpus.dic.token2id["<eos>"])
 
         # update max sentence length
@@ -89,7 +90,7 @@ def main():
     for li in input_mat:
         insert_num = max_input_ren - len(li)
         for _ in range(insert_num):
-            li.append(corpus.dic.token2id['<pad>'])
+            li.insert(0, corpus.dic.token2id['<pad>'])
     for li in output_mat:
         insert_num = max_output_ren - len(li)
         for _ in range(insert_num):
@@ -98,6 +99,11 @@ def main():
     # create batch matrix
     input_mat = np.array(input_mat, dtype=np.int32).T
     output_mat = np.array(output_mat, dtype=np.int32).T
+
+    # print(input_mat[:, 0:5])
+    # print(output_mat[:, 0:5])
+    # for i in range(21):
+    #     print(corpus.dic[input_mat[i][0]])
 
     #############################
     #### train seq2seq model ####
@@ -120,9 +126,9 @@ def main():
             model.encode(input_batch, train=True)  # encode (output: hidden Variable)
 
             # Decode from encoded context
-            end_batch = xp.array([corpus.dic.token2id["<eos>"] for _ in range(batchsize)])
+            end_batch = xp.array([corpus.dic.token2id["<start>"] for _ in range(batchsize)])
             first_word = output_batch[0]
-            loss, predict_mat = model.decode(end_batch, first_word, train=True)  # <eos>タグ(batchsize分)を初期入力に設定
+            loss, predict_mat = model.decode(end_batch, first_word, train=True)  # <start>タグ(batchsize分)を初期入力に設定
             next_ids = xp.argmax(predict_mat.data, axis=1)
             accum_loss += loss
             for w_ids in output_batch[1:]:
@@ -132,8 +138,7 @@ def main():
 
             model.cleargrads()                      # initialize all grad to zero
             accum_loss.backward()                   # back propagation
-            accum_loss.unchain_backward()           # truncate BPTT
-            optimizer.update()                      # 最適化ルーチンの実行
+            optimizer.update()
             total_loss += float(accum_loss.data)
             batch_num += 1
             print('Epoch: ', num, 'Batch_num', batch_num, 'batch loss: {:.2f}'.format(float(accum_loss.data)))

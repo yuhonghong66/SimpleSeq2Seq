@@ -21,7 +21,7 @@ xp = np
 
 class Encoder(chainer.Chain):
 
-    dropout_ratio = 0.5
+    dropout_ratio = 0.3
 
     def __init__(self, vocab_size, embed_size, hidden_size, batch_size):
         super(Encoder, self).__init__(
@@ -152,7 +152,7 @@ class Seq2Seq(chainer.Chain):
         self.one_encode(src_text, train=False)
 
         sentence = ""
-        word_id = word2id["<eos>"]
+        word_id = word2id["<start>"]
         for _ in range(sentence_limit):
             predict_vec = self.one_decode(predict_id=word_id, teacher_id=None, train=False)
             word = id2word[xp.argmax(predict_vec.data)]     # choose word_ID which has the highest probability
