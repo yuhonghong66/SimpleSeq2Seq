@@ -8,8 +8,8 @@ from seq2seq import Seq2Seq
 from chainer import serializers, cuda
 
 # path info
-DATA_PATH = './data/pair_corpus.txt_temp'
-MODEL_PATH = 'data/299.model'
+DATA_PATH = './data/cut_corpus100.txt'
+MODEL_PATH = 'data/139.model'
 
 # parse command line args
 parser = argparse.ArgumentParser()
@@ -94,10 +94,10 @@ def test_run(data_path, model_path):
         print("-> ", sentence)
         print('')
 
-        if num == 30:
+        if num == 10:
             break
 
 
 if __name__ == '__main__':
-    #interpreter(DATA_PATH, MODEL_PATH)
+    interpreter(DATA_PATH, MODEL_PATH)
     test_run(DATA_PATH, MODEL_PATH)

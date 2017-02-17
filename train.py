@@ -7,6 +7,8 @@ args: --gpu (flg of GPU, if you want to use GPU, please write "--gpu 1")
 """
 
 import os
+os.environ["CHAINER_TYPE_CHECK"] = "0"
+
 import argparse
 import numpy as np
 import chainer

@@ -8,6 +8,8 @@ Ilya Sutskever, Oriol Vinyals, and Quoc V. Le.
 Sequence to sequence learning with neural networks.
 In Advances in Neural Information Processing Systems (NIPS 2014).
 """
+import os
+os.environ["CHAINER_TYPE_CHECK"] = "0"
 
 import numpy as np
 import chainer
@@ -20,9 +22,6 @@ xp = np
 
 
 class Encoder(chainer.Chain):
-
-    dropout_ratio = 0.3
-
     def __init__(self, vocab_size, embed_size, hidden_size, batch_size):
         super(Encoder, self).__init__(
             xe=L.EmbedID(vocab_size, embed_size, ignore_label=-1),
@@ -34,13 +33,10 @@ class Encoder(chainer.Chain):
 
     def __call__(self, x, c_pre, h_pre, train=True):
         e = F.tanh(self.xe(x))
-        c_tmp, h_tmp = F.lstm(c_pre, self.eh(F.dropout(e, ratio=self.dropout_ratio, train=train)) + self.hh(h_pre))
-        tmp = chainer.Variable(x.data != -1).data.reshape(len(x), 1)    # calculate flg whether x is -1 or not
-        enable = tmp
-        for _ in range(self.hidden_size - 1):
-            enable = xp.hstack((enable, tmp))
-        c_next = F.where(enable, c_tmp, c_pre)     # if x!=-1, c_tmp . elseif x=-1, c_pre.
-        h_next = F.where(enable, h_tmp, h_pre)     # if x!=-1, h_tmp . elseif x=-1, h_pre.
+        c_tmp, h_tmp = F.lstm(c_pre, self.eh(e) + self.hh(h_pre))
+        enable = chainer.Variable(chainer.Variable(x.data != -1).data.reshape(len(x), 1))    # calculate flg whether x is -1 or not
+        c_next = F.where(enable, c_tmp, c_pre)                                   # if x!=-1, c_tmp . elseif x=-1, c_pre.
+        h_next = F.where(enable, h_tmp, h_pre)                                   # if x!=-1, h_tmp . elseif x=-1, h_pre.
         return c_next, h_next
 
 
@@ -54,9 +50,12 @@ class Decoder(chainer.Chain):
             fy=L.Linear(embed_size, vocab_size),
         )
 
-    def __call__(self, y, c, h):
+    def __call__(self, y, c_pre, h_pre):
         e = F.tanh(self.ye(y))
-        c_next, h_next = F.lstm(c, self.eh(e) + self.hh(h))
+        c_tmp, h_tmp = F.lstm(c_pre, self.eh(e) + self.hh(h_pre))
+        enable = chainer.Variable(chainer.Variable(y.data != -1).data.reshape(len(y), 1))
+        c_next = F.where(enable, c_tmp, c_pre)
+        h_next = F.where(enable, h_tmp, h_pre)
         f = F.tanh(self.hf(h_next))
         return self.fy(f), c_next, h_next
 
