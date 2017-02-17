@@ -3,13 +3,13 @@
 import argparse
 import unicodedata
 from nltk import word_tokenize
-from util import to_words, ConvCorpus
+from util import ConvCorpus
 from seq2seq import Seq2Seq
 from chainer import serializers, cuda
 
 # path info
-DATA_PATH = './data/cut_corpus100.txt'
-MODEL_PATH = 'data/139.model'
+DATA_DIR = './data/corpus/'
+MODEL_PATH = 'data/259.model'
 
 # parse command line args
 parser = argparse.ArgumentParser()
@@ -31,7 +31,7 @@ def interpreter(data_path, model_path):
     """
     # call dictionary class
     corpus = ConvCorpus(file_path=None)
-    corpus.load(load_dir='./data/corpus/')
+    corpus.load(load_dir=data_path)
     print('Vocabulary Size (number of words) :', len(corpus.dic.token2id))
     print('')
 
@@ -72,7 +72,7 @@ def test_run(data_path, model_path):
     """
 
     corpus = ConvCorpus(file_path=None)
-    corpus.load(load_dir='./data/corpus/')
+    corpus.load(load_dir=data_path)
 
     print('Vocabulary Size (number of words) :', len(corpus.dic.token2id))
     print('')
@@ -83,7 +83,7 @@ def test_run(data_path, model_path):
 
     # run an interpreter
     for num, input_sentence in enumerate(corpus.posts):
-        id_sequence = input_sentence
+        id_sequence = input_sentence.copy()
         input_sentence.insert(0, corpus.dic.token2id["<eos>"])
 
         model.initialize()  # initialize cell
@@ -99,5 +99,5 @@ def test_run(data_path, model_path):
 
 
 if __name__ == '__main__':
-    interpreter(DATA_PATH, MODEL_PATH)
-    test_run(DATA_PATH, MODEL_PATH)
+    interpreter(DATA_DIR, MODEL_PATH)
+    test_run(DATA_DIR, MODEL_PATH)
