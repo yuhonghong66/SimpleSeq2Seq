@@ -9,7 +9,7 @@ from chainer import serializers, cuda
 
 # path info
 DATA_DIR = './data/corpus/'
-MODEL_PATH = 'data/259.model'
+MODEL_PATH = 'data/319.model'
 
 # parse command line args
 parser = argparse.ArgumentParser()
@@ -44,6 +44,7 @@ def interpreter(data_path, model_path):
     print('( If you want to end a talk, please type "exit". )')
     print('')
     while True:
+        print('>> ', end='')
         sentence = input()
         if sentence == 'exit':
             print('See you again!')
@@ -84,6 +85,7 @@ def test_run(data_path, model_path):
     # run an interpreter
     for num, input_sentence in enumerate(corpus.posts):
         id_sequence = input_sentence.copy()
+        input_sentence.reverse()
         input_sentence.insert(0, corpus.dic.token2id["<eos>"])
 
         model.initialize()  # initialize cell
