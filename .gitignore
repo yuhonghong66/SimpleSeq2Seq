@@ -1,4 +1,8 @@
 .idea
 __pycache__
+
 data/*
-!data/.gitkeep
+!data/corpus
+data/corpus/*
+!data/corpus/.gitkeep
+

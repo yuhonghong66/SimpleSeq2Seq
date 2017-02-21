@@ -133,7 +133,7 @@ def main():
             # Decode from encoded context
             end_batch = xp.array([corpus.dic.token2id["<start>"] for _ in range(batchsize)])
             first_word = output_batch[0]
-            loss, predict_mat = model.decode(end_batch, first_word, train=True)  # <start>タグ(batchsize分)を初期入力に設定
+            loss, predict_mat = model.decode(end_batch, first_word, train=True)
             next_ids = xp.argmax(predict_mat.data, axis=1)
             accum_loss += loss
             for w_ids in output_batch[1:]:

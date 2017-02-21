@@ -7,7 +7,7 @@ import argparse
 import unicodedata
 import pickle
 import numpy as np
-import  matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 from nltk import word_tokenize
 from chainer import serializers, cuda
 from util import ConvCorpus
@@ -45,7 +45,7 @@ def interpreter(data_path, model_path):
     print('')
 
     # rebuild seq2seq model
-    model = Seq2Seq(len(corpus.dic.token2id), feature_num=300, hidden_num=300, batch_size=1, gpu_flg=args.gpu)
+    model = Seq2Seq(len(corpus.dic.token2id), feature_num=1024, hidden_num=1024, batch_size=1, gpu_flg=args.gpu)
     serializers.load_hdf5(model_path, model)
 
     # run conversation system
@@ -88,7 +88,7 @@ def test_run(data_path, model_path):
     print('')
 
     # rebuild seq2seq model
-    model = Seq2Seq(len(corpus.dic.token2id), feature_num=300, hidden_num=300, batch_size=1, gpu_flg=args.gpu)
+    model = Seq2Seq(len(corpus.dic.token2id), feature_num=1024, hidden_num=1024, batch_size=1, gpu_flg=args.gpu)
     serializers.load_hdf5(model_path, model)
 
     # run an interpreter
