@@ -1,19 +1,28 @@
 # -*- coding:utf-8 -*-
 
+import os
+os.environ["CHAINER_TYPE_CHECK"] = "0"
+
 import argparse
 import unicodedata
+import pickle
+import numpy as np
+import  matplotlib.pyplot as plt
 from nltk import word_tokenize
+from chainer import serializers, cuda
 from util import ConvCorpus
 from seq2seq import Seq2Seq
-from chainer import serializers, cuda
+
 
 # path info
 DATA_DIR = './data/corpus/'
-MODEL_PATH = 'data/319.model'
+MODEL_PATH = 'data/9.model'
+LOSS_PATH = './data/loss_data.pkl'
 
 # parse command line args
 parser = argparse.ArgumentParser()
 parser.add_argument('--gpu', '-g', default='-1', type=int, help='GPU ID (negative value indicates CPU)')
+parser.add_argument('--bar', '-b', default='0', type=int, help='whether to show the graph of loss values or not')
 args = parser.parse_args()
 gpu_device = 0
 if args.gpu >= 0:
@@ -100,6 +109,23 @@ def test_run(data_path, model_path):
             break
 
 
+def show_chart(loss_path):
+    """
+    Show the graph of Losses for each epochs
+    """
+    with open(loss_path, mode='rb') as f:
+        loss_data = np.array(pickle.load(f))
+    row = len(loss_data)
+    loop_num = np.array([i + 1 for i in range(row)])
+    plt.plot(loop_num, loss_data, label="Loss Value", color="green")
+    plt.xlabel("Epoch")
+    plt.ylabel("Loss")
+    plt.title("Learning Rate of Seq2Seq Model")
+    plt.show()
+
+
 if __name__ == '__main__':
     interpreter(DATA_DIR, MODEL_PATH)
     test_run(DATA_DIR, MODEL_PATH)
+    if args.bar:
+        show_chart(LOSS_PATH)

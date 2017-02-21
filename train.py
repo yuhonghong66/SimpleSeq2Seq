@@ -9,6 +9,7 @@ args: --gpu (flg of GPU, if you want to use GPU, please write "--gpu 1")
 import os
 os.environ["CHAINER_TYPE_CHECK"] = "0"
 
+import pickle
 import argparse
 import numpy as np
 import chainer
@@ -22,8 +23,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--data', '-d', default='data/cut_corpus100.txt', type=str, help='Data file directory')
 parser.add_argument('--gpu', '-g', default='-1', type=int, help='GPU ID (negative value indicates CPU)')
 parser.add_argument('--epoch', '-e', default=1000, type=int, help='number of epochs to learn')
-parser.add_argument('--feature_num', '-f', default=300, type=int, help='dimension of feature layer')
-parser.add_argument('--hidden_num', '-hi', default=300, type=int, help='dimension of hidden layer')
+parser.add_argument('--feature_num', '-f', default=1024, type=int, help='dimension of feature layer')
+parser.add_argument('--hidden_num', '-hi', default=1024, type=int, help='dimension of hidden layer')
 parser.add_argument('--batchsize', '-b', default=100, type=int, help='learning minibatch size')
 args = parser.parse_args()
 
@@ -62,9 +63,10 @@ def main():
                     hidden_num=hidden_num, batch_size=batchsize, gpu_flg=args.gpu)
     if args.gpu >= 0:
         model.to_gpu()
-    optimizer = optimizers.AdaGrad(lr=0.01)
+    optimizer = optimizers.Adam(alpha=0.001)
     optimizer.setup(model)
-    optimizer.add_hook(chainer.optimizer.WeightDecay(0.0001))
+    optimizer.add_hook(chainer.optimizer.GradientClipping(5))
+    # optimizer.add_hook(chainer.optimizer.WeightDecay(0.0001))
 
     ##########################
     #### create ID corpus ####
@@ -112,6 +114,7 @@ def main():
     #############################
 
     accum_loss = 0
+    loss_data = []
     for num, epoch in enumerate(range(n_epoch)):
         total_loss = 0
         batch_num = 0
@@ -155,6 +158,10 @@ def main():
             serializers.save_hdf5('data/' + str(epoch) + '.state', optimizer)
 
         print('Epoch: ', num, 'Total loss: {:.2f}'.format(total_loss))
+        loss_data.append(total_loss)
+
+    with open('./data/loss_data.pkl', 'wb') as f:
+        pickle.dump(loss_data, f)
 
 
 if __name__ == "__main__":
