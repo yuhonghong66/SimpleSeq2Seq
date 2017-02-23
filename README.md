@@ -60,11 +60,18 @@ This file should be located in `./data/pair_corpus.txt` (i.e. the same name).
 
 ## Requirement
 
-- pyenv 
+You can easily get Python and its packages for data science by installing [Anaconda][anaconda].
+I also use chainer, gensim, and nltk in python packages.
+I use nkf command to change encoding into UTF-8.
+Here, I write the requirement for this scripts.
+
 - anaconda3-2.4.0
 - chainer (1.5 ~ latest)
 - gensim
+- nltk
 - nkf
+
+[anaconda]: https://www.continuum.io/ "anaconda"
 
 
 ## Usage
@@ -93,16 +100,34 @@ This file should be located in `./data/pair_corpus.txt` (i.e. the same name).
    ~~~
    
    This script use GPU when you set the GPU flag to 1 like above.
+   
+   You can also set the epochs, the dimension of the hidden and word embedding layer, and the batch size
+   by writing the following command.
+   
+   ~~~
+    $ python train.py --epoch 500 --feature_num 1000 --hidden_num 1000 --batchsize 100
+   ~~~
 
 3. Run `interpreter.py` to talk ChatBot trained by you.
+
+   ~~~
+    $ python interpreter.py
+   ~~~ 
+   
+   If you set `--bar` parameter to 1, you can see the loss graphs.
+   
+   ~~~
+    $ python interpreter.py --bar 1
+   ~~~ 
+   
 
 ## Example
 
 Here, I show the result of learning by using a conversation corpus. 
 
     $ python interpreter.py
-      Vocabulary Size (number of words) : 60000
-      Conversation system is ready to run, please talk to me!
+      Vocabulary Size (number of words) : 796
+      The system is ready to run, please talk to me!
       ( If you want to end a talk, please type "exit". )
       
       Hello!
