@@ -17,7 +17,8 @@ from seq2seq import Seq2Seq
 # path info
 DATA_DIR = './data/corpus/'
 MODEL_PATH = 'data/9.model'
-LOSS_PATH = './data/loss_data.pkl'
+TRAIN_LOSS_PATH = './data/loss_train_data.pkl'
+TEST_LOSS_PATH = './data/loss_test_data.pkl'
 
 # parse command line args
 parser = argparse.ArgumentParser()
@@ -49,7 +50,7 @@ def interpreter(data_path, model_path):
     serializers.load_hdf5(model_path, model)
 
     # run conversation system
-    print('Conversation system is ready to run, please talk to me!')
+    print('The system is ready to run, please talk to me!')
     print('( If you want to end a talk, please type "exit". )')
     print('')
     while True:
@@ -73,7 +74,7 @@ def interpreter(data_path, model_path):
         print('')
 
 
-def test_run(data_path, model_path):
+def test_run(data_path, model_path, n_show=10):
     """
     Test function.
     Input is training data.
@@ -105,21 +106,25 @@ def test_run(data_path, model_path):
         print("-> ", sentence)
         print('')
 
-        if num == 10:
+        if num == n_show:
             break
 
 
-def show_chart(loss_path):
+def show_chart(train_loss_path, test_loss_path):
     """
     Show the graph of Losses for each epochs
     """
-    with open(loss_path, mode='rb') as f:
-        loss_data = np.array(pickle.load(f))
-    row = len(loss_data)
+    with open(train_loss_path, mode='rb') as f:
+        train_loss_data = np.array(pickle.load(f))
+    with open(test_loss_path, mode='rb') as f:
+        test_loss_data = np.array(pickle.load(f))
+    row = len(train_loss_data)
     loop_num = np.array([i + 1 for i in range(row)])
-    plt.plot(loop_num, loss_data, label="Loss Value", color="green")
+    plt.plot(loop_num, train_loss_data, label="Train Loss Value", color="gray")
+    plt.plot(loop_num, test_loss_data, label="Test Loss Value", color="green")
     plt.xlabel("Epoch")
     plt.ylabel("Loss")
+    plt.legend(loc=2)
     plt.title("Learning Rate of Seq2Seq Model")
     plt.show()
 
@@ -128,4 +133,4 @@ if __name__ == '__main__':
     interpreter(DATA_DIR, MODEL_PATH)
     test_run(DATA_DIR, MODEL_PATH)
     if args.bar:
-        show_chart(LOSS_PATH)
+        show_chart(TRAIN_LOSS_PATH, TEST_LOSS_PATH)

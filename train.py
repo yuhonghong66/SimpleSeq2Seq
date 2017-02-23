@@ -114,13 +114,14 @@ def main():
     #############################
 
     accum_loss = 0
-    loss_data = []
+    train_loss_data = []
+    test_loss_data = []
     for num, epoch in enumerate(range(n_epoch)):
-        total_loss = 0
+        total_loss = test_loss = 0
         batch_num = 0
         perm = np.random.permutation(len(corpus.posts))
 
-        for i in range(0, len(corpus.posts), batchsize):
+        for i in range(0, len(corpus.posts) - batchsize, batchsize):
 
             # select batch data
             input_batch = input_mat[:, perm[i:i + batchsize]]
@@ -141,27 +142,61 @@ def main():
                 next_ids = xp.argmax(predict_mat.data, axis=1)
                 accum_loss += loss
 
-            model.cleargrads()                      # initialize all grad to zero
-            accum_loss.backward()                   # back propagation
+            # learn model
+            model.cleargrads()     # initialize all grad to zero
+            accum_loss.backward()  # back propagation
             optimizer.update()
             total_loss += float(accum_loss.data)
             batch_num += 1
             print('Epoch: ', num, 'Batch_num', batch_num, 'batch loss: {:.2f}'.format(float(accum_loss.data)))
             accum_loss = 0
 
+        else:
+            # select last batch data
+            input_batch = input_mat[:, perm[i + batchsize:i + (batchsize * 2)]]
+            output_batch = output_mat[:, perm[i + batchsize:i + (batchsize * 2)]]
+
+            # Encode a sentence
+            model.initialize()                     # initialize cell
+            model.encode(input_batch, train=True)  # encode (output: hidden Variable)
+
+            # Decode from encoded context
+            end_batch = xp.array([corpus.dic.token2id["<start>"] for _ in range(batchsize)])
+            first_word = output_batch[0]
+            loss, predict_mat = model.decode(end_batch, first_word, train=True)
+            next_ids = xp.argmax(predict_mat.data, axis=1)
+            test_loss += loss
+            for w_ids in output_batch[1:]:
+                loss, predict_mat = model.decode(next_ids, w_ids, train=True)
+                next_ids = xp.argmax(predict_mat.data, axis=1)
+                test_loss += loss
+
         # save model and optimizer
         if (epoch + 1) % 10 == 0:
             print('-----', epoch + 1, ' times -----')
-            print('save the model')
+            print('save the model and optimizer')
             serializers.save_hdf5('data/' + str(epoch) + '.model', model)
-            print('save the optimizer')
             serializers.save_hdf5('data/' + str(epoch) + '.state', optimizer)
 
-        print('Epoch: ', num, 'Total loss: {:.2f}'.format(total_loss))
-        loss_data.append(total_loss)
+        # display the on-going status
+        print('Epoch: ', num,
+              'Train loss: {:.2f}'.format(total_loss),
+              'Test loss: {:.2f}'.format(float(test_loss.data)))
+        train_loss_data.append(total_loss)
+        test_loss_data.append(float(test_loss.data))
 
-    with open('./data/loss_data.pkl', 'wb') as f:
-        pickle.dump(loss_data, f)
+        # evaluate a test loss
+        check_loss = test_loss_data[-10:]           # check out the last 10 loss data
+        end_flg = [j for j in range(len(check_loss) - 1) if check_loss[j] < check_loss[j + 1]]
+        if len(end_flg) > 7:
+            print('Probably it is over-fitting. So stop to learn...')
+            break
+
+    # save loss data
+    with open('./data/loss_train_data.pkl', 'wb') as f:
+        pickle.dump(train_loss_data, f)
+    with open('./data/loss_test_data.pkl', 'wb') as f:
+        pickle.dump(test_loss_data, f)
 
 
 if __name__ == "__main__":
