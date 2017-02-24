@@ -40,7 +40,7 @@ This file should be located in `./data/pair_corpus.txt` (i.e. the same name).
 
 ***DEMO:***
 
-![Demo](https://github.com/OnizukaLab/SentimentAnalysis/blob/master/image/demo_test.png?raw=true)
+![Demo](https://github.com/OnizukaLab/SimpleSeq2Seq/blob/master/data/s2s_sample.gif?raw=true)
 
 ## Features
 

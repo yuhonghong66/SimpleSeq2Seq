@@ -3,6 +3,7 @@ __pycache__
 
 data/*
 !data/corpus
+!data/s2s_sample.gif
 data/corpus/*
 !data/corpus/.gitkeep
 
