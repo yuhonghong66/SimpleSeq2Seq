@@ -10,6 +10,7 @@ Output: pair_corpus.txt (like the following format)
 <post> <TAB> <its reply> ...
 
 """
+import ssl
 import re
 import os
 import unicodedata
@@ -18,6 +19,7 @@ from urllib import request
 from nltk import word_tokenize
 from gensim import corpora
 from util import is_english
+ssl._create_default_https_context = ssl._create_unverified_context
 
 
 def unzip():

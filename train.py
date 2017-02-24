@@ -20,7 +20,7 @@ from seq2seq import Seq2Seq
 
 # parse command line args
 parser = argparse.ArgumentParser()
-parser.add_argument('--data', '-d', default='data/cut_corpus100.txt', type=str, help='Data file directory')
+parser.add_argument('--data', '-d', default='data/pair_corpus.txt', type=str, help='Data file directory')
 parser.add_argument('--gpu', '-g', default='-1', type=int, help='GPU ID (negative value indicates CPU)')
 parser.add_argument('--epoch', '-e', default=1000, type=int, help='number of epochs to learn')
 parser.add_argument('--feature_num', '-f', default=1024, type=int, help='dimension of feature layer')
@@ -28,6 +28,7 @@ parser.add_argument('--hidden_num', '-hi', default=1024, type=int, help='dimensi
 parser.add_argument('--batchsize', '-b', default=100, type=int, help='learning minibatch size')
 args = parser.parse_args()
 
+# GPU settings
 gpu_device = 0
 if args.gpu >= 0:
     cuda.check_cuda_available()
@@ -103,11 +104,6 @@ def main():
     # create batch matrix
     input_mat = np.array(input_mat, dtype=np.int32).T
     output_mat = np.array(output_mat, dtype=np.int32).T
-
-    # print(input_mat[:, 0:5])
-    # print(output_mat[:, 0:5])
-    # for i in range(21):
-    #     print(corpus.dic[input_mat[i][0]])
 
     #############################
     #### train seq2seq model ####

@@ -65,7 +65,7 @@ class Seq2Seq(chainer.Chain):
     def __init__(self, vocab_size, feature_num, hidden_num, batch_size, gpu_flg):
         """
         :param vocab_size: input vocab size
-        :param feature_num: size of feature layer
+        :param feature_num: size of feature layer (embed layer)
         :param hidden_num: size of hidden layer
         :return:
         """

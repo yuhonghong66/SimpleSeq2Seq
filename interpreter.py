@@ -27,6 +27,8 @@ parser.add_argument('--feature_num', '-f', default=1024, type=int, help='dimensi
 parser.add_argument('--hidden_num', '-hi', default=1024, type=int, help='dimension of hidden layer')
 parser.add_argument('--bar', '-b', default='0', type=int, help='whether to show the graph of loss values or not')
 args = parser.parse_args()
+
+# GPU settings
 gpu_device = 0
 if args.gpu >= 0:
     cuda.check_cuda_available()
