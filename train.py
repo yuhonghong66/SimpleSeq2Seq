@@ -49,10 +49,10 @@ def main():
     ###########################
 
     if os.path.exists('./data/corpus/dictionary.dict'):
-        corpus = ConvCorpus(file_path=None)
+        corpus = ConvCorpus(file_path=None, batch_size=batchsize)
         corpus.load(load_dir='./data/corpus/')
     else:
-        corpus = ConvCorpus(args.data)
+        corpus = ConvCorpus(file_path=args.data, batch_size=batchsize)
         corpus.save(save_dir='./data/corpus/')
     print('Vocabulary Size (number of words) :', len(corpus.dic.token2id))
 

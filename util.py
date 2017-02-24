@@ -24,18 +24,18 @@ def is_english(string):
 
 
 class ConvCorpus:
-    def __init__(self, file_path, size_filter=True):
+    def __init__(self, file_path, batch_size=100, size_filter=True):
         self.posts = []
         self.cmnts = []
         self.dic = None
 
         if file_path is not None:
-            self._construct_dict(file_path, size_filter)
+            self._construct_dict(file_path, batch_size, size_filter)
 
-    def _construct_dict(self, file_path, size_filter):
+    def _construct_dict(self, file_path, batch_size, size_filter):
         # define sentence and corpus size
         max_length = 20
-        batch_size = 100
+        batch_size = batch_size
 
         # preprocess
         posts = []
