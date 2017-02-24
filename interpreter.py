@@ -23,6 +23,8 @@ TEST_LOSS_PATH = './data/loss_test_data.pkl'
 # parse command line args
 parser = argparse.ArgumentParser()
 parser.add_argument('--gpu', '-g', default='-1', type=int, help='GPU ID (negative value indicates CPU)')
+parser.add_argument('--feature_num', '-f', default=1024, type=int, help='dimension of feature layer')
+parser.add_argument('--hidden_num', '-hi', default=1024, type=int, help='dimension of hidden layer')
 parser.add_argument('--bar', '-b', default='0', type=int, help='whether to show the graph of loss values or not')
 args = parser.parse_args()
 gpu_device = 0
@@ -46,7 +48,8 @@ def interpreter(data_path, model_path):
     print('')
 
     # rebuild seq2seq model
-    model = Seq2Seq(len(corpus.dic.token2id), feature_num=1024, hidden_num=1024, batch_size=1, gpu_flg=args.gpu)
+    model = Seq2Seq(len(corpus.dic.token2id), feature_num=args.feature_num,
+                    hidden_num=args.hidden_num, batch_size=1, gpu_flg=args.gpu)
     serializers.load_hdf5(model_path, model)
 
     # run conversation system
@@ -89,7 +92,8 @@ def test_run(data_path, model_path, n_show=10):
     print('')
 
     # rebuild seq2seq model
-    model = Seq2Seq(len(corpus.dic.token2id), feature_num=1024, hidden_num=1024, batch_size=1, gpu_flg=args.gpu)
+    model = Seq2Seq(len(corpus.dic.token2id), feature_num=args.feature_num,
+                    hidden_num=args.hidden_num, batch_size=1, gpu_flg=args.gpu)
     serializers.load_hdf5(model_path, model)
 
     # run an interpreter

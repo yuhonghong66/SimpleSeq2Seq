@@ -108,16 +108,18 @@ Here, I write the requirement for this scripts.
     $ python train.py --epoch 500 --feature_num 1000 --hidden_num 1000 --batchsize 100
    ~~~
 
-3. Run `interpreter.py` to talk ChatBot trained by you.
+3. Run `interpreter.py` to talk ChatBot trained by a given corpus.
+   As you set the hidden and feature parameters which are different values in the training, 
+   you have to teach this script its values like the following command.
 
    ~~~
-    $ python interpreter.py
+    $ python interpreter.py --feature_num 1000 --hidden_num 1000
    ~~~ 
    
    If you set `--bar` parameter to 1, you can see the loss graphs.
    
    ~~~
-    $ python interpreter.py --bar 1
+    $ python interpreter.py --bar 1 --feature_num 1000 --hidden_num 1000
    ~~~ 
    
 
