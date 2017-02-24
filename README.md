@@ -15,6 +15,10 @@ If you only want to use seq2seq model in chainer, you should use [chainer's form
 
 ## Description
 
+***DEMO:***
+
+![Demo](https://github.com/OnizukaLab/SimpleSeq2Seq/blob/master/data/s2s_sample.gif?raw=true)
+
 These scripts use the corpus; pairs of sentences. 
 
 In this experiment, we train the seq2seq model with movie dialogs 
@@ -33,14 +37,9 @@ a sentence in the second column is a translation result towards a sentence in th
 These sentences have to be separated by TAB.
 This file should be located in `./data/pair_corpus.txt` (i.e. the same name). 
 
-
 [cornell]: https://people.mpi-sws.org/~cristian/Cornell_Movie-Dialogs_Corpus.html "cornell"
 
 
-
-***DEMO:***
-
-![Demo](https://github.com/OnizukaLab/SimpleSeq2Seq/blob/master/data/s2s_sample.gif?raw=true)
 
 ## Features
 
