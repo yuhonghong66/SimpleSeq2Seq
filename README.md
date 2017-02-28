@@ -2,7 +2,7 @@
 
 This repository is the implementation of simple seq2seq model (not containing attention system).
 Seq2seq Model is implemented by [chainer][chainer].
-This software aim to learn pairs of sentences 
+This software aims to learn pairs of sentences 
 (e.g. conversation corpus or parallel corpus used in the field of Machine Translation) using seq2seq. 
 
 __Caution__: This model is not used NStepLSTM. 
@@ -108,7 +108,10 @@ Here, I write the requirement for this scripts.
    ~~~
 
 3. Run `interpreter.py` to talk ChatBot trained by a given corpus.
-   As you set the hidden and feature parameters which are different values in the training, 
+   You can choose the model by setting `MODEL_PATH` in File `interpreter.py`, line `19`.
+   `train.py` saves the models in `./data/hoge.model` ("hoge" means the number of epochs),
+   so you should set the path of the model which you want to see outputs from.
+   As you set the hidden and feature parameters which are not default values in the training, 
    you have to teach this script its values like the following command.
 
    ~~~
@@ -124,7 +127,18 @@ Here, I write the requirement for this scripts.
 
 ## Example
 
-Here, I show the result of learning by using a conversation corpus. 
+I'll show you the result of learning from Cornell Movie-Dialogs Corpus.
+This is the plot of loss.
+
+
+***Model Loss:***
+
+![Model Loss](https://github.com/OnizukaLab/SimpleSeq2Seq/blob/master/data/gpu_deep_loss_meanbatch.png?raw=true)
+
+
+Finally, here, I show the result of learning by using a conversation corpus. 
+
+***Sample of Talking:***
 
     $ python interpreter.py
       Vocabulary Size (number of words) : 796

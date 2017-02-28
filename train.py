@@ -178,7 +178,7 @@ def main():
         print('Epoch: ', num,
               'Train loss: {:.2f}'.format(total_loss),
               'Test loss: {:.2f}'.format(float(test_loss.data)))
-        train_loss_data.append(total_loss)
+        train_loss_data.append(float(total_loss / batch_num))
         test_loss_data.append(float(test_loss.data))
 
         # evaluate a test loss

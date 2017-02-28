@@ -16,7 +16,7 @@ from seq2seq import Seq2Seq
 
 # path info
 DATA_DIR = './data/corpus/'
-MODEL_PATH = 'data/9.model'
+MODEL_PATH = './data/839.model'
 TRAIN_LOSS_PATH = './data/loss_train_data.pkl'
 TEST_LOSS_PATH = './data/loss_test_data.pkl'
 

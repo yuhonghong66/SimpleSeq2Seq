@@ -4,6 +4,7 @@ __pycache__
 data/*
 !data/corpus
 !data/s2s_sample.gif
+!data/gpu_deep_loss_meanbatch.png
 data/corpus/*
 !data/corpus/.gitkeep
 
