@@ -133,7 +133,7 @@ This is the plot of loss.
 
 ***Model Loss:***
 
-![Model Loss](https://github.com/OnizukaLab/SimpleSeq2Seq/blob/master/data/gpu_deep_loss_meanbatch.png?raw=true)
+![Model Loss](https://github.com/OnizukaLab/SimpleSeq2Seq/blob/master/data/train1000epochs.png?raw=true)
 
 
 Finally, here, I show the result of learning by using a conversation corpus. 

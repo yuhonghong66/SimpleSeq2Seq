@@ -1,10 +1,10 @@
 .idea
-__pycache__
+__pycache__/*
 
 data/*
 !data/corpus
 !data/s2s_sample.gif
-!data/gpu_deep_loss_meanbatch.png
+!data/train1000epochs.png
 data/corpus/*
 !data/corpus/.gitkeep
 
