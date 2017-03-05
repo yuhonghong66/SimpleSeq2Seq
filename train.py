@@ -14,7 +14,7 @@ import argparse
 import numpy as np
 import chainer
 from chainer import cuda, optimizers, serializers
-from util import ConvCorpus
+from util import ConvCorpus, JaConvCorpus
 from seq2seq import Seq2Seq
 
 
@@ -105,6 +105,13 @@ def main():
     input_mat = np.array(input_mat, dtype=np.int32).T
     output_mat = np.array(output_mat, dtype=np.int32).T
 
+    # separate corpus into Train and Test
+    perm = np.random.permutation(len(corpus.posts))
+    test_input_mat = input_mat[:, perm[0:0 + batchsize]]
+    test_output_mat = output_mat[:, perm[0:0 + batchsize]]
+    train_input_mat = input_mat[:, perm[batchsize:]]
+    train_output_mat = output_mat[:, perm[batchsize:]]
+
     #############################
     #### train seq2seq model ####
     #############################
@@ -115,13 +122,13 @@ def main():
     for num, epoch in enumerate(range(n_epoch)):
         total_loss = test_loss = 0
         batch_num = 0
-        perm = np.random.permutation(len(corpus.posts))
+        perm = np.random.permutation(len(corpus.posts) - batchsize)
 
         for i in range(0, len(corpus.posts) - batchsize, batchsize):
 
             # select batch data
-            input_batch = input_mat[:, perm[i:i + batchsize]]
-            output_batch = output_mat[:, perm[i:i + batchsize]]
+            input_batch = train_input_mat[:, perm[i:i + batchsize]]
+            output_batch = train_output_mat[:, perm[i:i + batchsize]]
 
             # Encode a sentence
             model.initialize()                     # initialize cell
@@ -149,8 +156,8 @@ def main():
 
         else:
             # select last batch data
-            input_batch = input_mat[:, perm[i + batchsize:i + (batchsize * 2)]]
-            output_batch = output_mat[:, perm[i + batchsize:i + (batchsize * 2)]]
+            input_batch = test_input_mat
+            output_batch = test_output_mat
 
             # Encode a sentence
             model.initialize()                     # initialize cell

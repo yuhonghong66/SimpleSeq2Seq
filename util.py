@@ -24,7 +24,10 @@ def is_english(string):
 
 
 class ConvCorpus:
-    def __init__(self, file_path, batch_size=100, size_filter=True):
+    """
+    Dictionary class for English
+    """
+    def __init__(self, file_path, batch_size=100, size_filter=False):
         self.posts = []
         self.cmnts = []
         self.dic = None
@@ -64,6 +67,78 @@ class ConvCorpus:
 
         # construct dictionary
         self.dic = corpora.Dictionary(posts + cmnts, prune_at=None)
+        self.dic.filter_extremes(no_below=1, no_above=1.0, keep_n=10000)
+        print(len(self.dic))
+        # add symbols
+        self.dic.token2id['<start>'] = len(self.dic.token2id)
+        self.dic.token2id['<eos>'] = len(self.dic.token2id)
+        self.dic.token2id['<unk>'] = len(self.dic.token2id)
+        self.dic.token2id['<pad>'] = -1
+
+        # make ID corpus
+        self.posts = [[self.dic.token2id.get(word, self.dic.token2id['<unk>']) for word in post] for post in posts]
+        self.cmnts = [[self.dic.token2id.get(word, self.dic.token2id['<unk>']) for word in cmnt] for cmnt in cmnts]
+
+    def save(self, save_dir):
+        self.dic.save(save_dir + 'dictionary.dict')
+        with open(save_dir + 'posts.list', 'wb') as f:
+            pickle.dump(self.posts, f)
+        with open(save_dir + 'cmnts.list', 'wb') as f:
+            pickle.dump(self.cmnts, f)
+
+    def load(self, load_dir):
+        self.dic = corpora.Dictionary.load(load_dir + 'dictionary.dict')
+        with open(load_dir + 'posts.list', 'rb') as f:
+            self.posts = pickle.load(f)
+        with open(load_dir + 'cmnts.list', 'rb') as f:
+            self.cmnts = pickle.load(f)
+        print(len(self.posts), 'of pairs has been collected!')
+
+
+class JaConvCorpus:
+    """
+    Dictionary Class for Japanese
+    """
+    def __init__(self, file_path, batch_size=100, size_filter=False):
+        self.posts = []
+        self.cmnts = []
+        self.dic = None
+
+        if file_path is not None:
+            self._construct_dict(file_path, batch_size, size_filter)
+
+    def _construct_dict(self, file_path, batch_size, size_filter):
+        # define sentence and corpus size
+        max_length = 100
+        batch_size = batch_size
+
+        # preprocess
+        posts = []
+        cmnts = []
+        pattern = '(.+?)(\t)(.+?)(\n|\r\n)'
+        r = re.compile(pattern)
+        for index, line in enumerate(open(file_path, 'r', encoding='utf-8')):
+            m = r.search(line)
+            if m is not None:
+                post = [word for word in m.group(1).split('　')]
+                cmnt = [word for word in m.group(3).split('　')]
+                if size_filter:
+                    if len(post) <= max_length and len(cmnt) <= max_length:
+                        posts.append(post)
+                        cmnts.append(cmnt)
+                else:
+                    posts.append(post)
+                    cmnts.append(cmnt)
+
+        # cut corpus for a batch size
+        remove_num = len(posts) - (int(len(posts) / batch_size) * batch_size)
+        del posts[len(posts) - remove_num:]
+        del cmnts[len(cmnts) - remove_num:]
+        print(len(posts), 'of pairs has been collected!')
+
+        # construct dictionary
+        self.dic = corpora.Dictionary(posts, prune_at=None)
+        self.dic.filter_extremes(no_below=2, no_above=1.0, keep_n=10000)    # remove low frequency words
 
         # add symbols
         self.dic.token2id['<start>'] = len(self.dic.token2id)
@@ -88,3 +163,4 @@ class ConvCorpus:
             self.posts = pickle.load(f)
         with open(load_dir + 'cmnts.list', 'rb') as f:
             self.cmnts = pickle.load(f)
+        print(len(self.posts), 'of pairs has been collected!')
