@@ -136,13 +136,13 @@ def main():
 
             # Decode from encoded context
             end_batch = xp.array([corpus.dic.token2id["<start>"] for _ in range(batchsize)])
-            first_word = output_batch[0]
-            loss, predict_mat = model.decode(end_batch, first_word, train=True)
-            next_ids = xp.argmax(predict_mat.data, axis=1)
+            first_words = output_batch[0]
+            loss, predict_mat = model.decode(end_batch, first_words, train=True)
+            next_ids = first_words
             accum_loss += loss
             for w_ids in output_batch[1:]:
                 loss, predict_mat = model.decode(next_ids, w_ids, train=True)
-                next_ids = xp.argmax(predict_mat.data, axis=1)
+                next_ids = w_ids
                 accum_loss += loss
 
             # learn model
@@ -165,8 +165,8 @@ def main():
 
             # Decode from encoded context
             end_batch = xp.array([corpus.dic.token2id["<start>"] for _ in range(batchsize)])
-            first_word = output_batch[0]
-            loss, predict_mat = model.decode(end_batch, first_word, train=True)
+            first_words = output_batch[0]
+            loss, predict_mat = model.decode(end_batch, first_words, train=True)
             next_ids = xp.argmax(predict_mat.data, axis=1)
             test_loss += loss
             for w_ids in output_batch[1:]:
