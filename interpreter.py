@@ -10,7 +10,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from nltk import word_tokenize
 from chainer import serializers, cuda
-from util import ConvCorpus
+from util import ConvCorpus, JaConvCorpus
 from seq2seq import Seq2Seq
 
 
@@ -26,6 +26,7 @@ parser.add_argument('--gpu', '-g', default='-1', type=int, help='GPU ID (negativ
 parser.add_argument('--feature_num', '-f', default=1024, type=int, help='dimension of feature layer')
 parser.add_argument('--hidden_num', '-hi', default=1024, type=int, help='dimension of hidden layer')
 parser.add_argument('--bar', '-b', default='0', type=int, help='whether to show the graph of loss values or not')
+parser.add_argument('--lang', '-l', default='en', type=str, help='the choice of a language (Japanese "ja" or English "en" )')
 args = parser.parse_args()
 
 # GPU settings
@@ -33,6 +34,27 @@ gpu_device = 0
 if args.gpu >= 0:
     cuda.check_cuda_available()
     cuda.get_device(gpu_device).use()
+
+
+def parse_ja_text(text):
+    """
+    Function to parse Japanese text.
+    :param text: string: sentence written by Japanese
+    :return: list: parsed text
+    """
+    import MeCab
+    mecab = MeCab.Tagger("mecabrc")
+    mecab.parse('')
+
+    # list up noun
+    mecab_result = mecab.parseToNode(text)
+    parse_list = []
+    while mecab_result is not None:
+        if mecab_result.surface != "":  # ヘッダとフッタを除外
+            parse_list.append(unicodedata.normalize('NFKC', mecab_result.surface).lower())
+        mecab_result = mecab_result.next
+
+    return parse_list
 
 
 def interpreter(data_path, model_path):
@@ -44,8 +66,15 @@ def interpreter(data_path, model_path):
     :return:
     """
     # call dictionary class
-    corpus = ConvCorpus(file_path=None)
-    corpus.load(load_dir=data_path)
+    if args.lang == 'en':
+        corpus = ConvCorpus(file_path=None)
+        corpus.load(load_dir=data_path)
+    elif args.lang == 'ja':
+        corpus = JaConvCorpus(file_path=None)
+        corpus.load(load_dir=data_path)
+    else:
+        print('You gave wrong argument to this system. Check out your argument about languages.')
+        raise ValueError
     print('Vocabulary Size (number of words) :', len(corpus.dic.token2id))
     print('')
 
@@ -65,7 +94,10 @@ def interpreter(data_path, model_path):
             print('See you again!')
             break
 
-        input_vocab = [unicodedata.normalize('NFKC', word.lower()) for word in word_tokenize(sentence)]
+        if args.lang == 'en':
+            input_vocab = [unicodedata.normalize('NFKC', word.lower()) for word in word_tokenize(sentence)]
+        elif args.lang == 'ja':
+            input_vocab = parse_ja_text(sentence)
         input_vocab.reverse()
         input_vocab.insert(0, "<eos>")
 
