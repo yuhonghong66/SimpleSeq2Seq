@@ -26,6 +26,7 @@ parser.add_argument('--epoch', '-e', default=1000, type=int, help='number of epo
 parser.add_argument('--feature_num', '-f', default=1024, type=int, help='dimension of feature layer')
 parser.add_argument('--hidden_num', '-hi', default=1024, type=int, help='dimension of hidden layer')
 parser.add_argument('--batchsize', '-b', default=100, type=int, help='learning minibatch size')
+parser.add_argument('--lang', '-l', default='en', type=str, help='the choice of a language (Japanese "ja" or English "en" )')
 args = parser.parse_args()
 
 # GPU settings
@@ -49,10 +50,16 @@ def main():
     ###########################
 
     if os.path.exists('./data/corpus/dictionary.dict'):
-        corpus = ConvCorpus(file_path=None, batch_size=batchsize)
+        if args.lang == 'ja':
+            corpus = JaConvCorpus(file_path=None, batch_size=batchsize)
+        else:
+            corpus = ConvCorpus(file_path=None, batch_size=batchsize)
         corpus.load(load_dir='./data/corpus/')
     else:
-        corpus = ConvCorpus(file_path=args.data, batch_size=batchsize)
+        if args.lang == 'ja':
+            corpus = JaConvCorpus(file_path=data_file, batch_size=batchsize)
+        else:
+            corpus = ConvCorpus(file_path=data_file, batch_size=batchsize)
         corpus.save(save_dir='./data/corpus/')
     print('Vocabulary Size (number of words) :', len(corpus.dic.token2id))
 
