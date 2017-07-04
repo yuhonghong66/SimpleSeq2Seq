@@ -11,6 +11,7 @@ os.environ["CHAINER_TYPE_CHECK"] = "0"
 
 import pickle
 import argparse
+import nltk
 import numpy as np
 import chainer
 from chainer import cuda, optimizers, serializers
@@ -30,7 +31,7 @@ parser.add_argument('--lang', '-l', default='en', type=str, help='the choice of 
 args = parser.parse_args()
 
 # GPU settings
-gpu_device = 0
+gpu_device = args.gpu
 if args.gpu >= 0:
     cuda.check_cuda_available()
     cuda.get_device(gpu_device).use()
@@ -119,6 +120,12 @@ def main():
     train_input_mat = input_mat[:, perm[batchsize:]]
     train_output_mat = output_mat[:, perm[batchsize:]]
 
+    list_of_references = []
+    for text_ndarray in test_output_mat.T:
+        reference = text_ndarray.tolist()
+        references = [[w_id for w_id in reference if w_id is not -1]]
+        list_of_references.append(references)
+
     #############################
     #### train seq2seq model ####
     #############################
@@ -126,6 +133,7 @@ def main():
     accum_loss = 0
     train_loss_data = []
     test_loss_data = []
+    bleu_score_data = []
     for num, epoch in enumerate(range(n_epoch)):
         total_loss = test_loss = 0
         batch_num = 0
@@ -176,10 +184,28 @@ def main():
             loss, predict_mat = model.decode(end_batch, first_words, train=True)
             next_ids = xp.argmax(predict_mat.data, axis=1)
             test_loss += loss
+            if args.gpu >= 0:
+                hypotheses = [cuda.to_cpu(next_ids)]
+            else:
+                hypotheses = [next_ids]
             for w_ids in output_batch[1:]:
                 loss, predict_mat = model.decode(next_ids, w_ids, train=True)
                 next_ids = xp.argmax(predict_mat.data, axis=1)
                 test_loss += loss
+                if args.gpu >= 0:
+                    hypotheses.append(cuda.to_cpu(next_ids))
+                else:
+                    hypotheses.append(next_ids)
+
+            # calculate BLEU score from test (develop) data
+            list_of_hypotheses = []
+            hypotheses = np.array(hypotheses).T
+            for hypothesis in hypotheses:
+                text_list = hypothesis.tolist()
+                list_of_hypotheses.append([w_id for w_id in text_list if w_id is not -1])
+            bleu_score = nltk.translate.bleu_score.corpus_bleu(list_of_references, list_of_hypotheses)
+            bleu_score_data.append(bleu_score)
+            print('Epoch: ', num, 'BLEU SCORE: ', bleu_score)
 
         # save model and optimizer
         if (epoch + 1) % 10 == 0:
@@ -198,7 +224,7 @@ def main():
         # evaluate a test loss
         check_loss = test_loss_data[-10:]           # check out the last 10 loss data
         end_flg = [j for j in range(len(check_loss) - 1) if check_loss[j] < check_loss[j + 1]]
-        if len(end_flg) > 7:
+        if len(end_flg) > 8:
             print('Probably it is over-fitting. So stop to learn...')
             break
 
@@ -207,6 +233,8 @@ def main():
         pickle.dump(train_loss_data, f)
     with open('./data/loss_test_data.pkl', 'wb') as f:
         pickle.dump(test_loss_data, f)
+    with open('./data/bleu_score_data.pkl', 'wb') as f:
+        pickle.dump(bleu_score_data, f)
 
 
 if __name__ == "__main__":

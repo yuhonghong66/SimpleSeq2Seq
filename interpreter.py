@@ -16,7 +16,7 @@ from seq2seq import Seq2Seq
 
 # path info
 DATA_DIR = './data/corpus/'
-MODEL_PATH = './data/399.model'
+MODEL_PATH = './data/9.model'
 TRAIN_LOSS_PATH = './data/loss_train_data.pkl'
 TEST_LOSS_PATH = './data/loss_test_data.pkl'
 
@@ -30,7 +30,7 @@ parser.add_argument('--lang', '-l', default='en', type=str, help='the choice of 
 args = parser.parse_args()
 
 # GPU settings
-gpu_device = 0
+gpu_device = args.gpu
 if args.gpu >= 0:
     cuda.check_cuda_available()
     cuda.get_device(gpu_device).use()
