@@ -17,6 +17,7 @@ import chainer
 from chainer import cuda, optimizers, serializers
 from util import ConvCorpus, JaConvCorpus
 from seq2seq import Seq2Seq
+from wer import wer
 
 
 # parse command line args
@@ -27,6 +28,7 @@ parser.add_argument('--epoch', '-e', default=1000, type=int, help='number of epo
 parser.add_argument('--feature_num', '-f', default=1024, type=int, help='dimension of feature layer')
 parser.add_argument('--hidden_num', '-hi', default=1024, type=int, help='dimension of hidden layer')
 parser.add_argument('--batchsize', '-b', default=100, type=int, help='learning minibatch size')
+parser.add_argument('--testsize', '-t', default=1000, type=int, help='number of text for testing a model')
 parser.add_argument('--lang', '-l', default='en', type=str, help='the choice of a language (Japanese "ja" or English "en" )')
 args = parser.parse_args()
 
@@ -42,6 +44,7 @@ n_epoch = args.epoch
 feature_num = args.feature_num
 hidden_num = args.hidden_num
 batchsize = args.batchsize
+testsize = args.testsize
 
 
 def main():
@@ -115,10 +118,10 @@ def main():
 
     # separate corpus into Train and Test
     perm = np.random.permutation(len(corpus.posts))
-    test_input_mat = input_mat[:, perm[0:0 + batchsize]]
-    test_output_mat = output_mat[:, perm[0:0 + batchsize]]
-    train_input_mat = input_mat[:, perm[batchsize:]]
-    train_output_mat = output_mat[:, perm[batchsize:]]
+    test_input_mat = input_mat[:, perm[0:0 + testsize]]
+    test_output_mat = output_mat[:, perm[0:0 + testsize]]
+    train_input_mat = input_mat[:, perm[testsize:]]
+    train_output_mat = output_mat[:, perm[testsize:]]
 
     list_of_references = []
     for text_ndarray in test_output_mat.T:
@@ -134,12 +137,14 @@ def main():
     train_loss_data = []
     test_loss_data = []
     bleu_score_data = []
+    wer_score_data = []
     for num, epoch in enumerate(range(n_epoch)):
         total_loss = test_loss = 0
         batch_num = 0
-        perm = np.random.permutation(len(corpus.posts) - batchsize)
+        perm = np.random.permutation(len(corpus.posts) - testsize)
 
-        for i in range(0, len(corpus.posts) - batchsize, batchsize):
+        # for training
+        for i in range(0, len(corpus.posts) - testsize, batchsize):
 
             # select batch data
             input_batch = train_input_mat[:, perm[i:i + batchsize]]
@@ -169,10 +174,13 @@ def main():
             print('Epoch: ', num, 'Batch_num', batch_num, 'batch loss: {:.2f}'.format(float(accum_loss.data)))
             accum_loss = 0
 
-        else:
-            # select last batch data
-            input_batch = test_input_mat
-            output_batch = test_output_mat
+        # for testing
+        list_of_hypotheses = []
+        for i in range(0, testsize, batchsize):
+
+            # select test batch data
+            input_batch = test_input_mat[:, i:i + batchsize]
+            output_batch = test_output_mat[:, i:i + batchsize]
 
             # Encode a sentence
             model.initialize()                     # initialize cell
@@ -197,15 +205,25 @@ def main():
                 else:
                     hypotheses.append(next_ids)
 
-            # calculate BLEU score from test (develop) data
-            list_of_hypotheses = []
+            # collect hypotheses for calculating BLEU score
             hypotheses = np.array(hypotheses).T
             for hypothesis in hypotheses:
                 text_list = hypothesis.tolist()
                 list_of_hypotheses.append([w_id for w_id in text_list if w_id is not -1])
-            bleu_score = nltk.translate.bleu_score.corpus_bleu(list_of_references, list_of_hypotheses)
-            bleu_score_data.append(bleu_score)
-            print('Epoch: ', num, 'BLEU SCORE: ', bleu_score)
+
+        # calculate BLEU score from test (develop) data
+        bleu_score = nltk.translate.bleu_score.corpus_bleu(list_of_references, list_of_hypotheses,
+                                                           weights=(0.25, 0.25, 0.25, 0.25))
+        bleu_score_data.append(bleu_score)
+        print('Epoch: ', num, 'BLEU SCORE: ', bleu_score)
+
+        # calculate WER score from test (develop) data
+        wer_score = 0
+        for index, references in enumerate(list_of_references):
+            wer_score += wer(references[0], list_of_hypotheses[index])
+        wer_score /= len(list_of_references)
+        wer_score_data.append(wer_score)
+        print('Epoch: ', num, 'WER SCORE: ', wer_score)
 
         # save model and optimizer
         if (epoch + 1) % 10 == 0:
@@ -235,6 +253,8 @@ def main():
         pickle.dump(test_loss_data, f)
     with open('./data/bleu_score_data.pkl', 'wb') as f:
         pickle.dump(bleu_score_data, f)
+    with open('./data/wer_score_data.pkl', 'wb') as f:
+        pickle.dump(wer_score_data, f)
 
 
 if __name__ == "__main__":

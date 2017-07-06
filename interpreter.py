@@ -19,6 +19,8 @@ DATA_DIR = './data/corpus/'
 MODEL_PATH = './data/9.model'
 TRAIN_LOSS_PATH = './data/loss_train_data.pkl'
 TEST_LOSS_PATH = './data/loss_test_data.pkl'
+BLEU_SCORE_PATH = './data/bleu_score_data.pkl'
+WER_SCORE_PATH = './data/wer_score_data.pkl'
 
 # parse command line args
 parser = argparse.ArgumentParser()
@@ -167,8 +169,42 @@ def show_chart(train_loss_path, test_loss_path):
     plt.show()
 
 
+def show_bleu_chart(bleu_score_path):
+    """
+    Show the graph of BLEU for each epochs
+    """
+    with open(bleu_score_path, mode='rb') as f:
+        bleu_score_data = np.array(pickle.load(f))
+    row = len(bleu_score_data)
+    loop_num = np.array([i + 1 for i in range(row)])
+    plt.plot(loop_num, bleu_score_data, label="BLUE score", color="blue")
+    plt.xlabel("Epoch")
+    plt.ylabel("BLEU")
+    plt.legend(loc=2)
+    plt.title("BLEU score of Seq2Seq Model")
+    plt.show()
+
+
+def show_wer_chart(wer_score_path):
+    """
+    Show the graph of WER for each epochs
+    """
+    with open(wer_score_path, mode='rb') as f:
+        wer_score_data = np.array(pickle.load(f))
+    row = len(wer_score_data)
+    loop_num = np.array([i + 1 for i in range(row)])
+    plt.plot(loop_num, wer_score_data, label="WER score", color="red")
+    plt.xlabel("Epoch")
+    plt.ylabel("WER")
+    plt.legend(loc=2)
+    plt.title("WER score of Seq2Seq Model")
+    plt.show()
+
+
 if __name__ == '__main__':
     interpreter(DATA_DIR, MODEL_PATH)
     test_run(DATA_DIR, MODEL_PATH)
     if args.bar:
         show_chart(TRAIN_LOSS_PATH, TEST_LOSS_PATH)
+        show_bleu_chart(BLEU_SCORE_PATH)
+        show_wer_chart(WER_SCORE_PATH)
