@@ -137,7 +137,7 @@ class JaConvCorpus:
         print(len(posts), 'of pairs has been collected!')
 
         # construct dictionary
-        self.dic = corpora.Dictionary(posts, prune_at=None)
+        self.dic = corpora.Dictionary(posts + cmnts, prune_at=None)
         self.dic.filter_extremes(no_below=2, no_above=1.0, keep_n=10000)    # remove low frequency words
 
         # add symbols
